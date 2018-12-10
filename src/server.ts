@@ -1,14 +1,14 @@
 import { ContainerInstanceManagementClient } from "azure-arm-containerinstance";
 import * as msrest from "ms-rest-azure";
-import { ILogger, ConsoleLogger } from './logging';
+import { ILogger, ConsoleLogger } from "./logging";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const SUBSCRIPTION_ID = process.env.SUBSCRIPTION_ID;
-const REGION = process.env.REGION;
-const RESOURCE_GROUP_NAME = process.env.RESOURCE_GROUP_NAME;
-const CONTAINER_IMAGE_NAME = process.env.TMODS_COMPUTE_IMAGE;
+const SUBSCRIPTION_ID = process.env.SUBSCRIPTION_ID || "";
+const REGION = process.env.REGION || "";
+const RESOURCE_GROUP_NAME = process.env.RESOURCE_GROUP_NAME || "";
+const CONTAINER_IMAGE_NAME = process.env.TMODS_COMPUTE_IMAGE || "";
 const CONTAINER_GROUP_NAME = "tmods-1209201805";
 const CONTAINER_INSTANCE_NAME = "tmods-compute";
 
@@ -46,10 +46,10 @@ msrest.interactiveLogin((_, creds) => {
             }
         }],
         location: REGION,
-        osType: 'linux',
+        osType: "linux",
         ipAddress: {
             ports: [{port: 80}],
-            type: 'public',
+            type: "public",
             dnsNameLabel: CONTAINER_GROUP_NAME
         }
     }).then((group) => {
