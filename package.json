@@ -1,0 +1,21 @@
+{
+  "name": "aci-api-testing",
+  "version": "1.0.0",
+  "description": "Testing an API that will create an ACI instance on the fly.",
+  "main": "server.js",
+  "scripts": {
+    "build": "rm ./dist/*.js && tsc",
+    "test": "node ./dist/server.js"
+  },
+  "author": "Mike Yeaney",
+  "license": "MIT",
+  "dependencies": {
+    "@types/dotenv": "^6.1.0",
+    "azure-arm-containerinstance": "^5.4.0",
+    "dotenv": "^6.2.0"
+  },
+  "devDependencies": {
+    "tslint": "^5.11.0",
+    "typescript": "^3.0.3"
+  }
+}
