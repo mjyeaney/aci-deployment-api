@@ -4,8 +4,9 @@
   "description": "Testing an API that will create an ACI instance on the fly.",
   "main": "server.js",
   "scripts": {
-    "build": "rm ./dist/*.js && tsc && cp -r ./src/static ./dist",
-    "test": "node ./dist/server.js"
+    "build": "rm ./dist/*.js && tsc && npm run copy-assets",
+    "copy-assets" : "rm -rf ./dist/static && cp -r ./src/static ./dist",
+    "launch": "node ./dist/server.js"
   },
   "author": "Mike Yeaney",
   "license": "MIT",

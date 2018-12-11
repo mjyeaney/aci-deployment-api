@@ -16,24 +16,65 @@ const CONTAINER_INSTANCE_NAME = "tmods-compute";
 
 const logger: ILogger = new ConsoleLogger();
 
+export interface GetActiveDeploymentsResponse
+{
+    DeploymentId: string;
+    Fqdn: string;
+    IpAddress: string;
+    Port: number;
+}
+
 export interface CreateContainerGroupResponse
 {
     OperationId: string;
     Status: string;
-    IsReady: Boolean;
+    IsReady: boolean;
     Fqdn: string;
     IpAddress: string;
-    Port: Number;
+    Port: number;
 }
 
 export interface IContainerServices
 {
-    SubmitNewDeployment(): Promise<CreateContainerGroupResponse>;
+    GetActiveDeployments(): Promise<GetActiveDeploymentsResponse[]>;
+    CreateNewDeployment(): Promise<CreateContainerGroupResponse>;
 }
 
 export class ContainerServices implements IContainerServices
 {
-    public async SubmitNewDeployment()
+    private creds: msrest.DeviceTokenCredentials = {} as msrest.DeviceTokenCredentials;
+
+    constructor() 
+    {
+        logger.LogMessage("Begining interactive login...");
+
+        // Just temp...need to replace with SP login
+        // msrest.interactiveLogin((_, creds) => {
+        //     logger.LogMessage("Login completed. Creating ACI client...");
+        //     this.creds = creds;
+        // });
+    }
+
+    public async GetActiveDeployments()
+    {          
+        const start = Date.now();
+    
+        let client = new ContainerInstanceManagementClient(this.creds, SUBSCRIPTION_ID);
+        logger.LogMessage("ACI client created...");
+
+        // List container instances / groups
+        // client.containerGroups.list().then((containerGroups) => {
+        //     console.dir(containerGroups, {depth: null, colors: true});
+        // }).catch((err) => {
+        //     console.dir(err, {depth: null, colors: true});
+        // });
+
+        return new Promise<GetActiveDeploymentsResponse[]>(resolve => {
+            resolve([]);
+        });
+    }
+
+    public async CreateNewDeployment()
     {
         let status = {
             OperationId: uuid(),
@@ -51,13 +92,6 @@ export class ContainerServices implements IContainerServices
         
             let client = new ContainerInstanceManagementClient(creds, SUBSCRIPTION_ID);
             logger.LogMessage("ACI client created...");
-        
-            // List container instances / groups
-            // client.containerGroups.list().then((containerGroups) => {
-            //     console.dir(containerGroups, {depth: null, colors: true});
-            // }).catch((err) => {
-            //     console.dir(err, {depth: null, colors: true});
-            // });
         
             // Create a container group
             logger.LogMessage("Updating container group deployment...");
