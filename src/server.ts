@@ -7,6 +7,8 @@ import * as containerServices from "./container-services";
 // Init environment
 dotenv.config();
 
+console.log("SUBSCRIPTION ID: " + process.env.SUBSCRIPTION_ID);
+
 // Setup logger
 const logger: ILogger = new ConsoleLogger();
 
@@ -32,10 +34,28 @@ const setNoCache = function(res: express.Response){
 // 
 // API methods
 //
-app.get("/api/getActiveDeployments", (req: express.Request, resp: express.Response) => {
+app.get("/api/getActiveDeployments", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
-    resp.json({
-        data: [1, 2, 3]
+    aci.GetActiveDeployments().then((data) => {
+        resp.json(data);
+    }).catch((reason) => {
+        resp.status(500);
+    });
+});
+app.post("/api/createNewDeployment", async (req: express.Request, resp: express.Response) => {
+    setNoCache(resp);
+    aci.CreateNewDeployment().then((data) => {
+        resp.json(data);
+    }).catch((reason) => {
+        resp.status(500);
+    });
+});
+app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
+    setNoCache(resp);
+    aci.GetDeployment(req.params.deploymentId).then((data) => {
+        resp.json(data);
+    }).catch((reason) => {
+        resp.status(500);
     });
 });
 
