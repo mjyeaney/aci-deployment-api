@@ -1,0 +1,13 @@
+* { margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 13px; color: #111; background-color: #fff; }
+input, select, textarea { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 13px; color: #000; border: 1px solic #c0c0c0; padding: 3px; }
+h1, h2, h3 { font-weight: 100; }
+p { margin-bottom: 1em; }
+
+.header { 
+    background-color: #468;
+    border-bottom: 1px solid #111;
+    padding: 1em;
+}
+.header h1 { color: #fff; }
