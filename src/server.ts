@@ -1,20 +1,18 @@
-import { ILogger, ConsoleLogger } from "./logging";
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
+import { ILogger, ConsoleLogger } from "./logging";
 import * as containerServices from "./container-services";
 
 // Init environment
 dotenv.config();
 
-console.log("SUBSCRIPTION ID: " + process.env.SUBSCRIPTION_ID);
-
 // Setup logger
 const logger: ILogger = new ConsoleLogger();
 
 // Init ACI services and the express engine
-const aci = new containerServices.ContainerServices();
 const app: express.Application = express();
+const aci = new containerServices.ContainerServices();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
 // and JSON
@@ -34,28 +32,28 @@ const setNoCache = function(res: express.Response){
 // 
 // API methods
 //
-app.get("/api/getActiveDeployments", async (req: express.Request, resp: express.Response) => {
+app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
     aci.GetActiveDeployments().then((data) => {
         resp.json(data);
     }).catch((reason) => {
-        resp.status(500);
+        resp.status(500).json(reason);
     });
 });
-app.post("/api/createNewDeployment", async (req: express.Request, resp: express.Response) => {
+app.post("/api/deployments", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
     aci.CreateNewDeployment().then((data) => {
         resp.json(data);
     }).catch((reason) => {
-        resp.status(500);
+        resp.status(500).json(reason);
     });
 });
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
-    aci.GetDeployment(req.params.deploymentId).then((data) => {
+    aci.GetDeployment(req.params.deploymentName).then((data) => {
         resp.json(data);
     }).catch((reason) => {
-        resp.status(500);
+        resp.status(500).json(reason);
     });
 });
 
