@@ -50,7 +50,7 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
 });
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
-    aci.GetDeployment(req.params.deploymentName).then((data) => {
+    aci.GetDeployment(req.params.deploymentId).then((data) => {
         resp.json(data);
     }).catch((reason) => {
         resp.status(500).json(reason);

@@ -2,10 +2,13 @@
   "name": "aci-api-testing",
   "version": "1.0.0",
   "description": "Testing an API that will create an ACI instance on the fly.",
-  "main": "server.js",
+  "main": "./dist/server.js",
   "scripts": {
-    "build": "rm ./dist/*.js && tsc && npm run copy-assets",
+    "clean": "rm -rf ./dist/*",
+    "build": "npm run clean && tsc && npm run build-ui && npm run copy-assets && npm run bump-asset-vers",
+    "build-ui": "rm -f ./dist/client/bundle.js && ./node_modules/browserify/bin/cmd.js ./dist/client/*.js -o ./dist/client/bundle.js && rm -f $(ls -d1 ./dist/client/*.js | grep -v bundle.js)",
     "copy-assets": "rm -rf ./dist/static && cp -r ./src/static ./dist",
+    "bump-asset-vers": "cat ./dist/static/index.html | sed -e 's/?ver=TIMESTAMP/?ver='\"$(date +%s)\"'/' > ./dist/static/index.html",
     "launch": "node ./dist/server.js"
   },
   "author": "Mike Yeaney",

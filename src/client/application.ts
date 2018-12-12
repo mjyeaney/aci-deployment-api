@@ -1,4 +1,5 @@
 import { IUiBinding, UiBinding } from "./ui-binding";
+import * as $ from "jquery";
 
 export class Application
 {
@@ -18,6 +19,6 @@ export class Application
 // Our singleton application instance
 const app = new Application(new UiBinding());
 
-// $(() => {
-//     app.Initialize();
-// });
+$(() => {
+    app.Initialize();
+});

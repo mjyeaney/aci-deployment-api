@@ -7,7 +7,6 @@ import * as msrest from "ms-rest-azure";
 import { ILogger, ConsoleLogger } from "./logging";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
-import { resolve } from "path";
 
 export interface IContainerServices
 {
@@ -22,19 +21,23 @@ export class ContainerServices implements IContainerServices
     private readonly REGION = process.env.REGION || "";
     private readonly RESOURCE_GROUP_NAME = process.env.RESOURCE_GROUP_NAME || "";
     private readonly CONTAINER_IMAGE_NAME = process.env.CONTAINER_IMAGE || "";
+    private readonly CLIENT_ID = process.env.CLIENT_ID || "";
+    private readonly CLIENT_SECRET = process.env.CLIENT_SECRET || "";
+    private readonly TENANT_ID = process.env.TENANT_ID || "";
 
     private readonly logger: ILogger = new ConsoleLogger();
     private creds: msrest.DeviceTokenCredentials = {} as msrest.DeviceTokenCredentials;
 
     constructor() 
     {
-        this.logger.LogMessage("Begining interactive login...");
-
-        // Just temp...need to replace with SP login
-        // msrest.interactiveLogin((_, creds) => {
-        //     this.logger.LogMessage("Login completed. Creating ACI client...");
-        //     this.creds = creds;
-        // });
+        this.logger.LogMessage("Begining SPN login...");
+        msrest.loginWithServicePrincipalSecret(this.CLIENT_ID, 
+            this.CLIENT_SECRET, 
+            this.TENANT_ID
+        ).then((creds) => {
+            this.logger.LogMessage("SPN login complete. Instance ready to use.");
+            this.creds = creds;
+        });
     }
 
     public async GetActiveDeployments()
@@ -47,12 +50,12 @@ export class ContainerServices implements IContainerServices
             client.containerGroups.list().then((containerGroups) => {
                 resolve(containerGroups);
             }).catch((err) => {
-                this.logger.LogMessage(`Error!!!!`);
+                this.logger.LogMessage("*****Error in ::GetActiveDeployments");
                 this.logger.LogMessage(JSON.stringify(err));
                 reject(err);
             }).finally(() => {
                 const duration = Date.now() - start;
-                this.logger.LogMessage(`GetActiveDeployments - ${duration} ms.`);
+                this.logger.LogMessage(`Operation took ${duration} ms`);
             });
         });
     }
@@ -67,12 +70,12 @@ export class ContainerServices implements IContainerServices
             client.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName).then((containerGroup) => {
                 resolve(containerGroup);
             }).catch((err) => {
-                this.logger.LogMessage(`Error!!!!`);
+                this.logger.LogMessage("*****Error in ::GetDeployment");
                 this.logger.LogMessage(JSON.stringify(err));
                 reject(err);
             }).finally(() => {
                 const duration = Date.now() - start;
-                this.logger.LogMessage(`GetActiveDeployments - ${duration} ms.`);
+                this.logger.LogMessage(`Operation took ${duration} ms`);
             });
         });
     }
@@ -113,13 +116,13 @@ export class ContainerServices implements IContainerServices
             }).then((group) => {
                 resolve(group);
             }).catch((err) => {
-                this.logger.LogMessage('ERROR!!!');
+                this.logger.LogMessage("*****Error in ::CreateNewDeployment");
                 this.logger.LogMessage(JSON.stringify(err));
                 reject(err);
             }).finally(() => {
                 const end: number = Date.now();
                 const duration = end - start;
-                this.logger.LogMessage(`Deployment time took ${duration} ms`);
+                this.logger.LogMessage(`Operation took ${duration} ms`);
             });
         });
     }
