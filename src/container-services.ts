@@ -10,8 +10,8 @@ import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } fro
 
 export interface IContainerServices
 {
-    GetActiveDeployments(): Promise<ContainerGroupListResult>;
-    GetDeployment(containerGroupName: string): Promise<{}>;
+    GetDeployments(): Promise<ContainerGroupListResult>;
+    GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
 }
 
@@ -31,7 +31,8 @@ export class ContainerServices implements IContainerServices
     private readonly CONTAINER_REGISTRY_PASSWORD = process.env.CONTAINER_REGISTRY_PASSWORD || "";
 
     private readonly logger: ILogger = new ConsoleLogger();
-    private creds: msrest.DeviceTokenCredentials = {} as msrest.DeviceTokenCredentials;
+    private creds!: msrest.DeviceTokenCredentials;
+    private client!: ContainerInstanceManagementClient;
 
     constructor() 
     {
@@ -42,37 +43,38 @@ export class ContainerServices implements IContainerServices
         ).then((creds) => {
             this.logger.LogMessage("SPN login complete. Instance ready to use.");
             this.creds = creds;
+            this.client = new ContainerInstanceManagementClient(this.creds, this.SUBSCRIPTION_ID, undefined, {
+                longRunningOperationRetryTimeout: 5
+            });
         });
     }
 
-    public async GetActiveDeployments()
+    public async GetDeployments()
     {
         return new Promise<ContainerGroupListResult>((resolve, reject) => {
             const start = Date.now();
-            let client = new ContainerInstanceManagementClient(this.creds, this.SUBSCRIPTION_ID);
 
             // List container instances / groups
-            client.containerGroups.list().then((containerGroups) => {
+            this.client.containerGroups.list().then((containerGroups) => {
                 resolve(containerGroups);
             }).catch((err) => {
-                this.logger.LogMessage("*****Error in ::GetActiveDeployments*****");
+                this.logger.LogMessage("*****Error in ::GetDeployments*****");
                 this.logger.LogMessage(JSON.stringify(err));
                 reject(err);
             }).finally(() => {
                 const duration = Date.now() - start;
-                this.logger.LogMessage(`Operation took ${duration} ms`);
+                this.logger.LogMessage(`::GetDeployments duration: ${duration} ms`);
             });
         });
     }
 
     public async GetDeployment(containerGroupName: string)
     {
-        return new Promise((resolve, reject) => {
+        return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
-            let client = new ContainerInstanceManagementClient(this.creds, this.SUBSCRIPTION_ID);
-
+            
             // List container instances / groups
-            client.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName).then((containerGroup) => {
+            this.client.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName).then((containerGroup) => {
                 resolve(containerGroup);
             }).catch((err) => {
                 this.logger.LogMessage("*****Error in ::GetDeployment*****");
@@ -80,7 +82,7 @@ export class ContainerServices implements IContainerServices
                 reject(err);
             }).finally(() => {
                 const duration = Date.now() - start;
-                this.logger.LogMessage(`Operation took ${duration} ms`);
+                this.logger.LogMessage(`::GetDeployment duration: ${duration} ms`);
             });
         });
     }
@@ -93,11 +95,10 @@ export class ContainerServices implements IContainerServices
 
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
-            let client = new ContainerInstanceManagementClient(this.creds, this.SUBSCRIPTION_ID);
         
             // Create a container group
             this.logger.LogMessage("Starting container group deployment...");
-            client.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, containerGroupName, {
+            this.client.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, containerGroupName, {
                 containers: [{
                     name: containerName,
                     image: this.CONTAINER_IMAGE_NAME,
@@ -129,9 +130,16 @@ export class ContainerServices implements IContainerServices
             }).finally(() => {
                 const end: number = Date.now();
                 const duration = end - start;
-                this.logger.LogMessage(`Operation took ${duration} ms`);
+                this.logger.LogMessage(`::CreateNewDeployment duration ${duration} ms`);
             });
         });
+    }
+
+    private async getExistingOrNewContainerGroup(): ContainerGroup
+    {
+        // list all existing groups
+        let groups = await this.GetDeployments();
+        let 
     }
 
     private getImageRegistryCredentials(): ImageRegistryCredential[] | undefined
