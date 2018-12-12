@@ -135,12 +135,12 @@ export class ContainerServices implements IContainerServices
         });
     }
 
-    private async getExistingOrNewContainerGroup(): ContainerGroup
-    {
-        // list all existing groups
-        let groups = await this.GetDeployments();
-        let 
-    }
+    // private async getExistingOrNewContainerGroup(): ContainerGroup
+    // {
+    //     // list all existing groups
+    //     let groups = await this.GetDeployments();
+    //     let 
+    // }
 
     private getImageRegistryCredentials(): ImageRegistryCredential[] | undefined
     {

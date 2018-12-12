@@ -34,7 +34,7 @@ const setNoCache = function(res: express.Response){
 //
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
-    aci.GetActiveDeployments().then((data) => {
+    aci.GetDeployments().then((data) => {
         resp.json(data);
     }).catch((reason) => {
         resp.status(500).json(reason);
