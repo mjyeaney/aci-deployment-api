@@ -3,6 +3,7 @@ import * as express from "express";
 import * as bodyParser from "body-parser";
 import { ILogger, ConsoleLogger } from "./logging";
 import * as containerServices from "./container-services";
+import * as summaryServices from "./summary-services";
 
 // Init environment
 dotenv.config();
@@ -13,6 +14,7 @@ const logger: ILogger = new ConsoleLogger();
 // Init ACI services and the express engine
 const app: express.Application = express();
 const aci = new containerServices.ContainerServices();
+const reporting = new summaryServices.SummaryServices(aci);
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
 // and JSON
@@ -30,16 +32,8 @@ const setNoCache = function(res: express.Response){
 };
 
 // 
-// API methods
+// Testing API methods
 //
-app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
-    setNoCache(resp);
-    aci.GetDeployments().then((data) => {
-        resp.json(data);
-    }).catch((reason) => {
-        resp.status(500).json(reason);
-    });
-});
 app.post("/api/test/getGroupName", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
     aci.GetMatchingGroupName(req.body.numCpu, req.body.memoryInGB).then((data) => {
@@ -48,7 +42,30 @@ app.post("/api/test/getGroupName", async (req: express.Request, resp: express.Re
         resp.status(500).json(reason);
     });
 });
+
+// 
+// Main API methods
+//
+app.get("/api/overviewSummary", async (req: express.Request, resp: express.Response) => {
+    logger.LogMessage("Executing GET /api/overviewSummary...");
+    setNoCache(resp);
+    reporting.GetOverviewDetails().then((data) => {
+        resp.json(data);
+    }).catch((reason) => {
+        resp.status(500).json(reason);
+    })
+});
+app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
+    logger.LogMessage("Executing GET /api/deployments...");
+    setNoCache(resp);
+    aci.GetDeployments().then((data) => {
+        resp.json(data);
+    }).catch((reason) => {
+        resp.status(500).json(reason);
+    });
+});
 app.post("/api/deployments", async (req: express.Request, resp: express.Response) => {
+    logger.LogMessage("Executing POST /api/deployments...");
     setNoCache(resp);
     
     if ((!req.body) || (!req.body.numCpu) || (!req.body.memoryInGB)) {
@@ -63,6 +80,7 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
     }
 });
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
+    logger.LogMessage(`Executing GET /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
     aci.GetDeployment(req.params.deploymentId).then((data) => {
         resp.json(data);

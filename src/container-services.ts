@@ -10,10 +10,12 @@ import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } fro
 
 export interface IContainerServices
 {
+    InitializationComplete: boolean;
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
     GetMatchingGroupName(numCpu: number, memoryInGB: number): Promise<string>;
+    GetFullConatinerDetails(): Promise<ContainerGroup[]>;
 }
 
 export class ContainerServices implements IContainerServices
@@ -35,6 +37,8 @@ export class ContainerServices implements IContainerServices
     private creds!: msrest.DeviceTokenCredentials;
     private client!: ContainerInstanceManagementClient;
 
+    public InitializationComplete: boolean = false;
+
     constructor() 
     {
         this.logger.LogMessage("Begining SPN login...");
@@ -47,6 +51,7 @@ export class ContainerServices implements IContainerServices
             this.client = new ContainerInstanceManagementClient(this.creds, this.SUBSCRIPTION_ID, undefined, {
                 longRunningOperationRetryTimeout: 5
             });
+            this.InitializationComplete = true;
         });
     }
 
@@ -158,6 +163,18 @@ export class ContainerServices implements IContainerServices
             groupName = `aci-inst-${uniq}`;
         }
         return groupName;
+    }
+
+    public async GetFullConatinerDetails(): Promise<ContainerGroup[]>
+    {
+        // list all existing groups
+        let groupName: string = "";
+        this.logger.LogMessage("Listing group deployments...");
+        let groups = await this.GetDeployments();
+        let groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
+            return await this.GetDeployment(group.name!);
+        }));
+        return groupStatus;
     }
 
     private getImageRegistryCredentials(): ImageRegistryCredential[] | undefined
