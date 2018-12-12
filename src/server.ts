@@ -40,6 +40,14 @@ app.get("/api/deployments", async (req: express.Request, resp: express.Response)
         resp.status(500).json(reason);
     });
 });
+app.post("/api/test/getGroupName", async (req: express.Request, resp: express.Response) => {
+    setNoCache(resp);
+    aci.GetMatchingGroupName(req.body.numCpu, req.body.memoryInGB).then((data) => {
+        resp.json(data);
+    }).catch((reason) => {
+        resp.status(500).json(reason);
+    });
+});
 app.post("/api/deployments", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
     

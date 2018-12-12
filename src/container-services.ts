@@ -13,6 +13,7 @@ export interface IContainerServices
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
+    GetMatchingGroupName(numCpu: number, memoryInGB: number): Promise<string>;
 }
 
 export class ContainerServices implements IContainerServices
@@ -89,9 +90,8 @@ export class ContainerServices implements IContainerServices
 
     public async CreateNewDeployment(numCpu: number, memoryInGB: number)
     {
-        const uniq = uuid().substr(-12);
-        const containerGroupName = `aci-inst-${uniq}`;
-        const containerName = `aci-cont-${uniq}`;
+        const containerGroupName = await this.GetMatchingGroupName(numCpu, memoryInGB);
+        const containerName = "default-container";
 
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
@@ -135,12 +135,30 @@ export class ContainerServices implements IContainerServices
         });
     }
 
-    // private async getExistingOrNewContainerGroup(): ContainerGroup
-    // {
-    //     // list all existing groups
-    //     let groups = await this.GetDeployments();
-    //     let 
-    // }
+    public async GetMatchingGroupName(numCpu: number, memoryInGB: number): Promise<string>
+    {
+        // list all existing groups
+        let groupName: string = "";
+        this.logger.LogMessage("Listing group deployments...");
+        let groups = await this.GetDeployments();
+        let groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
+            return await this.GetDeployment(group.name!);
+        }));
+        let matched = groupStatus.some((details) => {
+            if ((details.instanceView!.state === "Stopped") && 
+                (details.containers[0].resources.requests.cpu === numCpu) &&
+                (details.containers[0].resources.requests.memoryInGB === memoryInGB)){
+                    groupName = details.name!;
+                    return true;
+            }
+            return false;
+        });
+        if (!matched){
+            const uniq = uuid().substr(-12);
+            groupName = `aci-inst-${uniq}`;
+        }
+        return groupName;
+    }
 
     private getImageRegistryCredentials(): ImageRegistryCredential[] | undefined
     {
