@@ -6,24 +6,29 @@ import { ContainerInstanceManagementClient } from "azure-arm-containerinstance";
 import * as msrest from "ms-rest-azure";
 import { ILogger, ConsoleLogger } from "./logging";
 import uuid = require("uuid");
-import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 
 export interface IContainerServices
 {
     GetActiveDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<{}>;
-    CreateNewDeployment(): Promise<ContainerGroup>;
+    CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
 }
 
 export class ContainerServices implements IContainerServices
 {
+    private readonly TENANT_ID = process.env.TENANT_ID || "";
+    private readonly CLIENT_ID = process.env.CLIENT_ID || "";
+    private readonly CLIENT_SECRET = process.env.CLIENT_SECRET || "";
     private readonly SUBSCRIPTION_ID = process.env.SUBSCRIPTION_ID || "";
     private readonly REGION = process.env.REGION || "";
     private readonly RESOURCE_GROUP_NAME = process.env.RESOURCE_GROUP_NAME || "";
     private readonly CONTAINER_IMAGE_NAME = process.env.CONTAINER_IMAGE || "";
-    private readonly CLIENT_ID = process.env.CLIENT_ID || "";
-    private readonly CLIENT_SECRET = process.env.CLIENT_SECRET || "";
-    private readonly TENANT_ID = process.env.TENANT_ID || "";
+    private readonly CONTAINER_PORT = parseInt(process.env.CONTAINER_PORT || "");
+    private readonly CONTAINER_OS_TYPE = process.env.CONTAINER_OS_TYPE || "";
+    private readonly CONTAINER_REGISTRY_HOST = process.env.CONTAINER_REGISTRY_HOST || "";
+    private readonly CONTAINER_REGISTRY_USERNAME = process.env.CONTAINER_REGISTRY_USERNAME || "";
+    private readonly CONTAINER_REGISTRY_PASSWORD = process.env.CONTAINER_REGISTRY_PASSWORD || "";
 
     private readonly logger: ILogger = new ConsoleLogger();
     private creds: msrest.DeviceTokenCredentials = {} as msrest.DeviceTokenCredentials;
@@ -50,7 +55,7 @@ export class ContainerServices implements IContainerServices
             client.containerGroups.list().then((containerGroups) => {
                 resolve(containerGroups);
             }).catch((err) => {
-                this.logger.LogMessage("*****Error in ::GetActiveDeployments");
+                this.logger.LogMessage("*****Error in ::GetActiveDeployments*****");
                 this.logger.LogMessage(JSON.stringify(err));
                 reject(err);
             }).finally(() => {
@@ -70,7 +75,7 @@ export class ContainerServices implements IContainerServices
             client.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName).then((containerGroup) => {
                 resolve(containerGroup);
             }).catch((err) => {
-                this.logger.LogMessage("*****Error in ::GetDeployment");
+                this.logger.LogMessage("*****Error in ::GetDeployment*****");
                 this.logger.LogMessage(JSON.stringify(err));
                 reject(err);
             }).finally(() => {
@@ -80,7 +85,7 @@ export class ContainerServices implements IContainerServices
         });
     }
 
-    public async CreateNewDeployment()
+    public async CreateNewDeployment(numCpu: number, memoryInGB: number)
     {
         const uniq = uuid().substr(-12);
         const containerGroupName = `aci-inst-${uniq}`;
@@ -97,26 +102,28 @@ export class ContainerServices implements IContainerServices
                     name: containerName,
                     image: this.CONTAINER_IMAGE_NAME,
                     ports: [{
-                        port: 80
+                        port: this.CONTAINER_PORT
                     }],
                     resources: {
                         requests: {
-                            memoryInGB: 1.5,
-                            cpu: 1
+                            memoryInGB: memoryInGB,
+                            cpu: numCpu
                         }
                     }
                 }],
+                imageRegistryCredentials: this.getImageRegistryCredentials(),
                 location: this.REGION,
-                osType: "linux",
+                osType: this.CONTAINER_OS_TYPE,
                 ipAddress: {
-                    ports: [{port: 80}],
+                    ports: [{port: this.CONTAINER_PORT}],
                     type: "public",
                     dnsNameLabel: containerGroupName
-                }
+                },
+                restartPolicy: "Never"
             }).then((group) => {
                 resolve(group);
             }).catch((err) => {
-                this.logger.LogMessage("*****Error in ::CreateNewDeployment");
+                this.logger.LogMessage("*****Error in ::CreateNewDeployment*****");
                 this.logger.LogMessage(JSON.stringify(err));
                 reject(err);
             }).finally(() => {
@@ -125,5 +132,20 @@ export class ContainerServices implements IContainerServices
                 this.logger.LogMessage(`Operation took ${duration} ms`);
             });
         });
+    }
+
+    private getImageRegistryCredentials(): ImageRegistryCredential[] | undefined
+    {
+        if ((!this.CONTAINER_REGISTRY_HOST) || (!this.CONTAINER_REGISTRY_USERNAME)) {
+            return undefined;
+        }
+
+        const credentials = [];
+        credentials.push({
+            server: this.CONTAINER_REGISTRY_HOST,
+            username: this.CONTAINER_REGISTRY_USERNAME,
+            password: this.CONTAINER_REGISTRY_PASSWORD
+        });
+        return credentials;
     }
 }

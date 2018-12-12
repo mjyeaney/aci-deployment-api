@@ -42,11 +42,17 @@ app.get("/api/deployments", async (req: express.Request, resp: express.Response)
 });
 app.post("/api/deployments", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
-    aci.CreateNewDeployment().then((data) => {
-        resp.json(data);
-    }).catch((reason) => {
-        resp.status(500).json(reason);
-    });
+    
+    if ((!req.body) || (!req.body.numCpu) || (!req.body.memoryInGB)) {
+        logger.LogMessage("Invalid request to /api/deployments");
+        resp.status(400).end();
+    } else {
+        aci.CreateNewDeployment(req.body.numCpu, req.body.memoryInGB).then((data) => {
+            resp.json(data);
+        }).catch((reason) => {
+            resp.status(500).json(reason);
+        });
+    }
 });
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
