@@ -9,8 +9,6 @@ class DataSummary
 
 class Application {
     public Initialize() {
-        // Configure chart with empty data
-
         // Load initial summary data
         this.loadOverviewData();
 
