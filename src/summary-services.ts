@@ -3,7 +3,6 @@
 //
 import { IContainerServices, ContainerServices} from "./container-services";
 import { ILogger, ConsoleLogger } from "./logging";
-import "fs";
 
 export interface ISummaryServices
 {
@@ -13,7 +12,9 @@ export interface ISummaryServices
 export class OverviewDetails
 {
     RunningInstances: number = 0;
-    InstanceCountsByTime: number[] = [];
+    StoppedInstances: number = 0;
+    RunningInstanceCounts: number[] = [];
+    StoppedInstanceCounts: number[] = [];
 }
 
 export class SummaryServices implements ISummaryServices
@@ -64,12 +65,19 @@ export class SummaryServices implements ISummaryServices
 
         // Read total instance counts and update total + buckets
         let currentGroups = await this.aci.GetFullConatinerDetails();
-        let totalCount = currentGroups.filter((g) => {
+        let runningCount = currentGroups.filter((g) => {
             return g.instanceView!.state === "Running";
         }).length;
+        let stoppedCount = currentGroups.length - runningCount;
 
-        currentData.RunningInstances = totalCount;
-        currentData.InstanceCountsByTime.push(totalCount);
+        currentData.RunningInstances = runningCount;
+        currentData.StoppedInstances = stoppedCount;
+        currentData.RunningInstanceCounts.push(runningCount);
+        currentData.StoppedInstanceCounts.push(stoppedCount);
+
+        // Apply clamping
+        currentData.RunningInstanceCounts = currentData.RunningInstanceCounts.slice(-144);
+        currentData.StoppedInstanceCounts = currentData.StoppedInstanceCounts.slice(-144);
 
         // Write new file
         this.tempData = currentData;

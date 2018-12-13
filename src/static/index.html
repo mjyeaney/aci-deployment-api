@@ -1,24 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>ACS Instance Manager - Overview</title>
+        <title>ACI Instance Manager - Overview</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600"" rel="stylesheet"" type="text/css"" />
         <link rel="stylesheet" href="/static/main.css?ver=TIMESTAMP" type="text/css" />
     </head>
     <body>
         <div class="header">
-            <h1>ACS Instance Manager</h1>
+            <h1>ACI Instance Manager</h1>
         </div>
 
         <div class="nav">
             <ul>
                 <li><a href="#/overivew" title="Overview">Overview</a></li>
-                <li><a href="#/instances" title="Running Instances">Running Instances</a></li>
             </ul>
         </div>
 
         <div class="content">
-            <h3>Content</h3>
+            <div class="summaryWidget number">
+                <p><span id="runningInstanceCount">0</span>Running Instances</p>
+                <ul>
+                    <li>Min: <span id="running-min">0.0</span></li>
+                    <li>Avg: <span id="running-avg">0.0</span></li>
+                    <li>Max: <span id="running-max">0.0</span></li>
+                </ul>
+            </div>
+            <div class="summaryWidget number">
+                <p><span id="stoppedInstanceCount">0</span>Stopped Instances</p>
+                <ul>
+                    <li>Min: <span id="stopped-min">0.0</span></li>
+                    <li>Avg: <span id="stopped-avg">0.0</span></li>
+                    <li>Max: <span id="stopped-max">0.0</span></li>
+                </ul>
+            </div>
         </div>
     </body>
-    <script type="text/javascript" src="/client/bundle.js?ver=TIMESTAMP"></script>
+    <script src="/client/bundle.js?ver=TIMESTAMP"></script>
 </html>

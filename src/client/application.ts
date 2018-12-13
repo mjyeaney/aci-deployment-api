@@ -1,24 +1,63 @@
-import { IUiBinding, UiBinding } from "./ui-binding";
 import * as $ from "jquery";
 
-export class Application
+class DataSummary
 {
-    private ui: IUiBinding;
+    Minimum: number = 0;
+    Maximum: number = 0;
+    Average: number = 0;
+}
 
-    constructor(ui: IUiBinding)
-    {
-        this.ui = ui;
+class Application {
+    public Initialize() {
+        // Configure chart with empty data
+
+        // Load initial summary data
+        this.loadOverviewData();
+
+        // Setup timers to reload data
+        setInterval(() => {
+            this.loadOverviewData();
+        }, 60 * 1000);
     }
 
-    public Initialize()
+    private loadOverviewData(): void {
+        $.ajax({
+            method: "GET",
+            url: "/api/overviewSummary"
+        }).done((results) => {
+            let runningSummary = this.getSequenceSummary(results.RunningInstanceCounts);
+            let stoppedSummary = this.getSequenceSummary(results.StoppedInstanceCounts);
+            $("#runningInstanceCount").text(results.RunningInstances);
+            $("#running-min").text(runningSummary.Minimum);
+            $("#running-avg").text(runningSummary.Average);
+            $("#running-max").text(runningSummary.Maximum);
+            $("#stoppedInstanceCount").text(results.StoppedInstances);
+            $("#stopped-min").text(stoppedSummary.Minimum);
+            $("#stopped-avg").text(stoppedSummary.Average);
+            $("#stopped-max").text(stoppedSummary.Maximum);
+        });
+    }
+
+    private getSequenceSummary(data: number[]): DataSummary
     {
-        // TODO:
+        let s = new DataSummary();
+        s.Minimum = Number.MAX_VALUE;
+        s.Maximum = Number.MIN_VALUE;
+        let sum = 0.0;
+
+        data.map((n) => {
+            if (n < s.Minimum) s.Minimum = n;
+            if (n > s.Maximum) s.Maximum = n;
+            sum += n;
+        });
+
+        s.Average = data.length == 0 ? 0.0 : sum / data.length;
+        return s;
     }
 }
 
 // Our singleton application instance
-const app = new Application(new UiBinding());
-
+const app = new Application();
 $(() => {
     app.Initialize();
 });
