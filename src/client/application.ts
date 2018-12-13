@@ -27,11 +27,11 @@ class Application {
             let stoppedSummary = this.getSequenceSummary(results.StoppedInstanceCounts);
             $("#runningInstanceCount").text(results.RunningInstances);
             $("#running-min").text(runningSummary.Minimum);
-            $("#running-avg").text(runningSummary.Average);
+            $("#running-avg").text(runningSummary.Average.toFixed(2));
             $("#running-max").text(runningSummary.Maximum);
             $("#stoppedInstanceCount").text(results.StoppedInstances);
             $("#stopped-min").text(stoppedSummary.Minimum);
-            $("#stopped-avg").text(stoppedSummary.Average);
+            $("#stopped-avg").text(stoppedSummary.Average.toFixed(2));
             $("#stopped-max").text(stoppedSummary.Maximum);
         });
     }
@@ -49,7 +49,7 @@ class Application {
             sum += n;
         });
 
-        s.Average = data.length == 0 ? 0.0 : sum / data.length;
+        s.Average = data.length == 0 ? 0.0 : (sum / data.length);
         return s;
     }
 }

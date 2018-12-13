@@ -2,6 +2,20 @@
 
 This project presents an API shim to deploy configured Azure Container Instances on the fly, and give a preliminary dashboard to monitoring status of the deployed / running images. 
 
+![Screenshot](basic-screenshot.png)
+
+### API Methods
+
+The following API methods are exposed from this application:
+
+* GET /api/deployments
+    * This lists all active deployments, and currently returns the same JSON format that the Azure REST api does.
+* POST /api/deployments
+    * This requires a body payload describing the number of CPU's and memory that are requested, such as "{numCpu:2, memoryInGB: 2}".
+    * Note this is a synchronous / blocking call - implementing the job/polling mechanism correctly was going to add more work that was necessary for this PoC.
+* GET /api/deployments/{deployment-name}
+    * This will return details about the specific deployment.
+
 ### Building
 
 There are tasks defined in `package.json` that are used to build the application. The most common one will be `npm run build`, which will create the `/dist` folder that is to be used for final depoloyment. 

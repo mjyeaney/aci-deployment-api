@@ -29,11 +29,11 @@ export class SummaryServices implements ISummaryServices
         this.logger = new ConsoleLogger();
 
         // Start background timer for this server instance to gather and report data
-        // Interval here is PT5M...shoudl likely pull in Moment correctly handle duration types
+        // Interval here is PT1M...shoudl likely pull in Moment correctly handle duration types
         this.logger.LogMessage("Starting SummaryServices background timer...");
         setInterval(() => {
             this.gatherAndUpdateMetrics();
-        }, 5 * 60 * 1000);
+        }, 1 * 60 * 1000);
 
         // Run the update method once on startup (but need to wait for init to be complete)
         const waitForAciSerivceInit = () => {
