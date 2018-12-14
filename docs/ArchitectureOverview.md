@@ -11,3 +11,5 @@ Note this applicaiton is serving as an API intermediary between requesting clien
 A typical call sequence will look something like the following:
 
 ![Request Deployment Sequence](request-deployment-sequence.png)
+
+Here we can see the client using a low-priviledge API method to initiate the actual resource deployment. This deployment is done using a Servcie Principal that is scoped appropriately and has sufficient permissions.
