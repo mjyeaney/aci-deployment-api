@@ -14,8 +14,14 @@ export interface IContainerServices
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
-    GetMatchingGroupName(numCpu: number, memoryInGB: number): Promise<string>;
+    GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
+}
+
+class GroupMatchInformation
+{
+    GroupName: string = "";
+    Group: ContainerGroup | undefined = undefined;
 }
 
 export class ContainerServices implements IContainerServices
@@ -95,55 +101,71 @@ export class ContainerServices implements IContainerServices
 
     public async CreateNewDeployment(numCpu: number, memoryInGB: number)
     {
-        const containerGroupName = await this.GetMatchingGroupName(numCpu, memoryInGB);
+        const matchInfo = await this.GetMatchingGroupInfo(numCpu, memoryInGB);
         const containerName = "default-container";
 
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
-        
-            // Create a container group
-            this.logger.LogMessage("Starting container group deployment...");
-            this.client.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, containerGroupName, {
-                containers: [{
-                    name: containerName,
-                    image: this.CONTAINER_IMAGE_NAME,
-                    ports: [{
-                        port: this.CONTAINER_PORT
-                    }],
-                    resources: {
-                        requests: {
-                            memoryInGB: memoryInGB,
-                            cpu: numCpu
+
+            if (!matchInfo.Group){        
+                // Create a container group - there was no match
+                this.logger.LogMessage("Starting new container group deployment (no match found)...");
+                this.client.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, matchInfo.GroupName, {
+                    containers: [{
+                        name: containerName,
+                        image: this.CONTAINER_IMAGE_NAME,
+                        ports: [{
+                            port: this.CONTAINER_PORT
+                        }],
+                        resources: {
+                            requests: {
+                                memoryInGB: memoryInGB,
+                                cpu: numCpu
+                            }
                         }
-                    }
-                }],
-                imageRegistryCredentials: this.getImageRegistryCredentials(),
-                location: this.REGION,
-                osType: this.CONTAINER_OS_TYPE,
-                ipAddress: {
-                    ports: [{port: this.CONTAINER_PORT}],
-                    type: "public",
-                    dnsNameLabel: containerGroupName
-                },
-                restartPolicy: "Never"
-            }).then((group) => {
-                resolve(group);
-            }).catch((err) => {
-                this.logger.LogMessage("*****Error in ::CreateNewDeployment*****");
-                this.logger.LogMessage(JSON.stringify(err));
-                reject(err);
-            }).finally(() => {
-                const end: number = Date.now();
-                const duration = end - start;
-                this.logger.LogMessage(`::CreateNewDeployment duration ${duration} ms`);
-            });
+                    }],
+                    imageRegistryCredentials: this.getImageRegistryCredentials(),
+                    location: this.REGION,
+                    osType: this.CONTAINER_OS_TYPE,
+                    ipAddress: {
+                        ports: [{port: this.CONTAINER_PORT}],
+                        type: "public",
+                        dnsNameLabel: matchInfo.GroupName
+                    },
+                    restartPolicy: "Never"
+                }).then((group) => {
+                    resolve(group);
+                }).catch((err) => {
+                    this.logger.LogMessage("*****Error in ::CreateNewDeployment*****");
+                    this.logger.LogMessage(JSON.stringify(err));
+                    reject(err);
+                }).finally(() => {
+                    const end: number = Date.now();
+                    const duration = end - start;
+                    this.logger.LogMessage(`::CreateNewDeployment duration ${duration} ms`);
+                });
+            } else {
+                this.logger.LogMessage("Starting existing container group (match found)...");
+                this.client.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.GroupName)
+                    .then(() => {
+                        resolve(matchInfo.Group);
+                    }).catch((err) => {
+                        this.logger.LogMessage("*****Error in ::CreateNewDeployment*****");
+                        this.logger.LogMessage(JSON.stringify(err));
+                        reject(err);
+                    }).finally(() => {
+                        const end: number = Date.now();
+                        const duration = end - start;
+                        this.logger.LogMessage(`::CreateNewDeployment duration ${duration} ms`);
+                    });
+            }
         });
     }
 
-    public async GetMatchingGroupName(numCpu: number, memoryInGB: number): Promise<string>
+    public async GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation>
     {
         // list all existing groups
-        let groupName: string = "";
+        let matchInfo = new GroupMatchInformation();
         this.logger.LogMessage("Listing group deployments...");
         let groups = await this.GetDeployments();
         let groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
@@ -153,16 +175,17 @@ export class ContainerServices implements IContainerServices
             if ((details.instanceView!.state === "Stopped") && 
                 (details.containers[0].resources.requests.cpu === numCpu) &&
                 (details.containers[0].resources.requests.memoryInGB === memoryInGB)){
-                    groupName = details.name!;
+                    matchInfo.GroupName = details.name!;
+                    matchInfo.Group = details;
                     return true;
             }
             return false;
         });
         if (!matched){
             const uniq = uuid().substr(-12);
-            groupName = `aci-inst-${uniq}`;
+            matchInfo.GroupName = `aci-inst-${uniq}`;
         }
-        return groupName;
+        return matchInfo;
     }
 
     public async GetFullConatinerDetails(): Promise<ContainerGroup[]>

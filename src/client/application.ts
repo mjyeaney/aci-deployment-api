@@ -39,8 +39,8 @@ class Application {
     private getSequenceSummary(data: number[]): DataSummary
     {
         let s = new DataSummary();
-        s.Minimum = Number.MAX_VALUE;
-        s.Maximum = Number.MIN_VALUE;
+        s.Minimum = Number.MAX_SAFE_INTEGER;
+        s.Maximum = Number.MIN_SAFE_INTEGER;
         let sum = 0.0;
 
         data.map((n) => {
