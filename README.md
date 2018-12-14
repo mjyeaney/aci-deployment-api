@@ -2,18 +2,18 @@
 
 This project presents an API shim to deploy configured Azure Container Instances on the fly, and give a preliminary dashboard to monitoring status of the deployed / running images. 
 
-![Screenshot](basic-screenshot.png)
+![Screenshot](docs/basic-screenshot.png)
 
 ### API Methods
 
 The following API methods are exposed from this application:
 
-* GET /api/deployments
+* `GET /api/deployments`
     * This lists all active deployments, and currently returns the same JSON format that the Azure REST api does.
-* POST /api/deployments
-    * This requires a body payload describing the number of CPU's and memory that are requested, such as "{numCpu:2, memoryInGB: 2}".
+* `POST /api/deployments`
+    * This requires a body payload describing the number of CPU's and memory that are requested, such as `{numCpu:2, memoryInGB: 2}`.
     * Note this is a synchronous / blocking call - implementing the job/polling mechanism correctly was going to add more work that was necessary for this PoC.
-* GET /api/deployments/{deployment-name}
+* `GET /api/deployments/{deployment-name}`
     * This will return details about the specific deployment.
 
 ### Building
@@ -42,6 +42,11 @@ CONTAINER_REGISTRY_PASSWORD=
 ```
 
 For local development, you may place a `.env` file in your root folder to set these variables.
+
+### Topics
+
+* [Architecture Overview](docs/ArchitectureOverview.md)
+* [Container Group Reuse](docs/ContainerGroupReuse.md)
 
 ### TODO
 
