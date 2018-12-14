@@ -63,3 +63,9 @@ p { margin-bottom: 1em; }
 .summaryWidget.number ul {
     list-style-type: none;
 }
+
+.summaryWidget.number li span.numeric-data { 
+    width: 5em;
+    text-align: right;
+    display: inline-block;
+}
