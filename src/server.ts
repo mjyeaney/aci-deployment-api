@@ -34,9 +34,9 @@ const setNoCache = function(res: express.Response){
 // 
 // Testing API methods
 //
-app.post("/api/test/getGroupName", async (req: express.Request, resp: express.Response) => {
+app.post("/api/test/getGroupInfo", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
-    aci.GetMatchingGroupName(req.body.numCpu, req.body.memoryInGB).then((data) => {
+    aci.GetMatchingGroupInfo(req.body.numCpu, req.body.memoryInGB).then((data) => {
         resp.json(data);
     }).catch((reason) => {
         resp.status(500).json(reason);
