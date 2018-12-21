@@ -59,6 +59,14 @@ p { margin-bottom: 1em; }
     padding: 1em;
 }
 
+.summaryWidget {
+    border: 1px solid #c0c0c0;
+    border-radius: 5px;
+    margin: 0 1em 1em 0;
+    font-size: .875em;
+    padding: .5em;
+}
+
 .summaryWidget.number { 
     width: 12em;
     text-align: center;
