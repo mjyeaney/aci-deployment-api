@@ -25,7 +25,15 @@ p { margin-bottom: 1em; }
     background-color: #0078d4;
     padding: 1em;
 }
-.header h1 { color: #fff; font-weight: 100; font-size: 1.5em}
+.header h1 { 
+    color: #fff; 
+    font-weight: 100; 
+    font-size: 1.5em;
+    background-image: url(/static/images/containerinstances.svg);
+    background-repeat: no-repeat;
+    background-position: left center;
+    padding-left: 2em;
+}
 
 .nav { 
     position: absolute;
@@ -33,12 +41,14 @@ p { margin-bottom: 1em; }
     top: 4em;
     bottom: 0;
     width: 15em;
-    background-color: #eee;
+    background-color: #f6f6f6;
+    border-right: 1px solid #a0a0a0;
 }
 
 .nav ul { list-style-type: none; }
 .nav ul li a { text-decoration: none; color: #111; padding: .75em; display: block; cursor: pointer; }
-.nav ul li a:hover, .nav ul li a.active { background-color: #ccc; }
+.nav ul li a:hover { background-color: #eee; }
+.nav ul li a.active { background-color: #ccc; }
 
 .content { 
     position: absolute;
@@ -64,6 +74,11 @@ p { margin-bottom: 1em; }
     list-style-type: none;
 }
 
+.summaryWidget.number li span.numeric-label {
+    width: 5em;
+    text-align: left;
+    display: inline-block;
+}
 .summaryWidget.number li span.numeric-data { 
     width: 5em;
     text-align: right;
