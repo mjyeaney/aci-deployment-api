@@ -1,3 +1,4 @@
+import { IUiBinding, UiBinding } from "./ui-binding";
 import * as $ from "jquery";
 
 class DataSummary
@@ -7,8 +8,27 @@ class DataSummary
     Average: number = 0;
 }
 
-class Application {
+interface IApplication
+{
+    Initialize(): void;
+    OnNavigationSelected(navItem: string): void;
+}
+
+class Application implements IApplication {
+    private ui: IUiBinding;
+
+    constructor(ui: IUiBinding){
+        this.ui = ui;
+    }
+
     public Initialize() {
+        // Setup UI events / callbacks
+        this.ui.SetupInitialState();
+        
+        this.ui.SetNavigationChangedCallback((path: string) => {
+            console.log(`Item selected: ${path}`);
+        });
+
         // Load initial summary data
         this.loadOverviewData();
 
@@ -18,7 +38,11 @@ class Application {
         }, 60 * 1000);
     }
 
-    private loadOverviewData(): void {
+    public OnNavigationSelected(navItem: string) {
+
+    }
+
+    private loadOverviewData() {
         $.ajax({
             method: "GET",
             url: "/api/overviewSummary"
@@ -55,7 +79,8 @@ class Application {
 }
 
 // Our singleton application instance
-const app = new Application();
+const app = new Application(new UiBinding());
+
 $(() => {
     app.Initialize();
 });

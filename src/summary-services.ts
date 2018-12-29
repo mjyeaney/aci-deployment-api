@@ -2,7 +2,7 @@
 // Provides serivces for generating and reading overview summary status
 //
 import { IContainerServices, ContainerServices} from "./container-services";
-import { ILogger, ConsoleLogger } from "./logging";
+import { ILogger } from "./logging";
 
 export interface ISummaryServices
 {
@@ -23,38 +23,40 @@ export class SummaryServices implements ISummaryServices
     private readonly aci: IContainerServices;
     private tempData: OverviewDetails = new OverviewDetails();
     
-    constructor(containerService: IContainerServices)
+    constructor(logger: ILogger, containerService: IContainerServices)
     {
+        this.logger = logger;
         this.aci = containerService;
-        this.logger = new ConsoleLogger();
 
         // Start background timer for this server instance to gather and report data
         // Interval here is PT1M...shoudl likely pull in Moment correctly handle duration types
-        this.logger.LogMessage("Starting SummaryServices background timer...");
+        this.logger.Write("Starting SummaryServices background timer...");
         setInterval(() => {
             this.gatherAndUpdateMetrics();
         }, 1 * 60 * 1000);
 
         // Run the update method once on startup (but need to wait for init to be complete)
-        const waitForAciSerivceInit = () => {
-            if (!this.aci.InitializationComplete){
-                setTimeout(waitForAciSerivceInit, 1000);
-            } else {
-                this.gatherAndUpdateMetrics();
-            }
-        };
-        waitForAciSerivceInit();
+        // const waitForAciSerivceInit = () => {
+        //     if (!this.aci.InitializationComplete){
+        //         setTimeout(waitForAciSerivceInit, 1000);
+        //     } else {
+        //         this.gatherAndUpdateMetrics();
+        //     }
+        // };
+        // waitForAciSerivceInit();
+
+        this.gatherAndUpdateMetrics();
     }
 
     public GetOverviewDetails()
     {
-        this.logger.LogMessage("Starting ::GetOverviewDetails...");
+        this.logger.Write("Starting ::GetOverviewDetails...");
         const start = Date.now();
         return new Promise<OverviewDetails>((resolve, reject) => {
             resolve(this.tempData);
         }).finally(() => {
             const duration = Date.now() - start;
-            this.logger.LogMessage(`::GetOverviewDetails duration: ${duration} ms`);
+            this.logger.Write(`::GetOverviewDetails duration: ${duration} ms`);
         });
     }
 
