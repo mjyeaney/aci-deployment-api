@@ -3,13 +3,13 @@
 //
 
 import { ContainerInstanceManagementClient } from "azure-arm-containerinstance";
+import { ResourceManagementClient } from "azure-arm-resource";
 import * as msrest from "ms-rest-azure";
 import { ILogger } from "./logging";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 
 export interface IContainerServices {
-    InitializationComplete: boolean;
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
@@ -38,10 +38,8 @@ export class ContainerServices implements IContainerServices {
     private readonly CONTAINER_REGISTRY_PASSWORD = process.env.CONTAINER_REGISTRY_PASSWORD || "";
 
     private readonly logger: ILogger;
-    private creds!: msrest.DeviceTokenCredentials;
-    private client!: ContainerInstanceManagementClient;
-
-    public InitializationComplete: boolean = false;
+    private aciClient!: ContainerInstanceManagementClient;
+    private armClient!: ResourceManagementClient.default;
 
     constructor(logger: ILogger) {
         this.logger = logger;
@@ -50,10 +48,10 @@ export class ContainerServices implements IContainerServices {
     public async GetDeployments() {
         return new Promise<ContainerGroupListResult>((resolve, reject) => {
             const start = Date.now();
-            this.initializeClient().then(() => {
+            this.initializeAciClient().then(() => {
 
                 // List container instances / groups
-                this.client.containerGroups.list().then((containerGroups) => {
+                this.aciClient.containerGroups.list().then((containerGroups) => {
                     resolve(containerGroups);
                 }).catch((err) => {
                     this.logger.Write("*****Error in ::GetDeployments*****");
@@ -71,10 +69,10 @@ export class ContainerServices implements IContainerServices {
     public async GetDeployment(containerGroupName: string) {
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
-            this.initializeClient().then(() => {
+            this.initializeAciClient().then(() => {
 
                 // List container instances / groups
-                this.client.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName)
+                this.aciClient.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName)
                 .then((containerGroup) => {
                     resolve(containerGroup);
                 })
@@ -95,81 +93,95 @@ export class ContainerServices implements IContainerServices {
     public async DeleteDeployment(containerGroupName: string) {
         return new Promise<void>((resolve, reject) => {
             const start = Date.now();
-            this.initializeClient().then(() => {
-                // TODO: Need ARM client to remove resource
+            this.initializeAciClient()
+            .then(() => {
+                return this.initializeArmClient();
+            })
+            .then(() => {
+                return this.aciClient.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName);
+            })
+            .then((group) => {
+                return this.armClient.resources.deleteById(group.id!, "2018-10-01");
+            })
+            .then(() => {
                 resolve();
-            });
+            })
+            .catch((reason) => {
+                reject(reason);
+            })
+            .finally(() => {
+                const duration = Date.now() - start;
+                this.logger.Write(`::DeleteDeployment duration: ${duration} ms`);
+            })
         });
     }
 
     public async CreateNewDeployment(numCpu: number, memoryInGB: number) {
-        const containerName = "default-container";
-
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
-            this.initializeClient()
-                .then(() => {
-                    return this.GetMatchingGroupInfo(numCpu, memoryInGB);
-                })
-                .then((matchInfo: GroupMatchInformation) => {
-                    if (!matchInfo.Group) {
-                        // Create a container group - there was no match
-                        this.logger.Write("Starting new container group deployment (no match found)...");
-                        this.client.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, matchInfo.GroupName, {
-                            containers: [{
-                                name: containerName,
-                                image: this.CONTAINER_IMAGE_NAME,
-                                ports: [{
-                                    port: this.CONTAINER_PORT
-                                }],
-                                resources: {
-                                    requests: {
-                                        memoryInGB: memoryInGB,
-                                        cpu: numCpu
-                                    }
-                                }
+            this.initializeAciClient()
+            .then(() => {
+                return this.GetMatchingGroupInfo(numCpu, memoryInGB);
+            })
+            .then((matchInfo: GroupMatchInformation) => {
+                if (!matchInfo.Group) {
+                    // Create a container group - there was no match
+                    this.logger.Write("Starting new container group deployment (no match found)...");
+                    this.aciClient.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, matchInfo.GroupName, {
+                        containers: [{
+                            name: "default-container",
+                            image: this.CONTAINER_IMAGE_NAME,
+                            ports: [{
+                                port: this.CONTAINER_PORT
                             }],
-                            imageRegistryCredentials: this.getImageRegistryCredentials(),
-                            location: this.REGION,
-                            osType: this.CONTAINER_OS_TYPE,
-                            ipAddress: {
-                                ports: [{ port: this.CONTAINER_PORT }],
-                                type: "public",
-                                dnsNameLabel: matchInfo.GroupName
-                            },
-                            restartPolicy: "Never"
-                        })
-                        .then((group) => {
-                            resolve(group);
-                        })
-                        .catch((err) => {
-                            this.logger.Write("*****Error in ::CreateNewDeployment*****");
-                            this.logger.Write(JSON.stringify(err));
-                            reject(err);
-                        })
-                        .finally(() => {
-                            const end: number = Date.now();
-                            const duration = end - start;
-                            this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
-                        });
-                    } else {
-                        this.logger.Write("Starting existing container group (match found)...");
-                        this.client.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.GroupName)
-                            .then(() => {
-                                resolve(matchInfo.Group);
-                            })
-                            .catch((err) => {
-                                this.logger.Write("*****Error in ::CreateNewDeployment*****");
-                                this.logger.Write(JSON.stringify(err));
-                                reject(err);
-                            })
-                            .finally(() => {
-                                const end: number = Date.now();
-                                const duration = end - start;
-                                this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
-                            });
-                    }
-                });
+                            resources: {
+                                requests: {
+                                    memoryInGB: memoryInGB,
+                                    cpu: numCpu
+                                }
+                            }
+                        }],
+                        imageRegistryCredentials: this.getImageRegistryCredentials(),
+                        location: this.REGION,
+                        osType: this.CONTAINER_OS_TYPE,
+                        ipAddress: {
+                            ports: [{ port: this.CONTAINER_PORT }],
+                            type: "public",
+                            dnsNameLabel: matchInfo.GroupName
+                        },
+                        restartPolicy: "Never"
+                    })
+                    .then((group) => {
+                        resolve(group);
+                    })
+                    .catch((err) => {
+                        this.logger.Write("*****Error in ::CreateNewDeployment*****");
+                        this.logger.Write(JSON.stringify(err));
+                        reject(err);
+                    })
+                    .finally(() => {
+                        const end: number = Date.now();
+                        const duration = end - start;
+                        this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
+                    });
+                } else {
+                    this.logger.Write("Starting existing container group (match found)...");
+                    this.aciClient.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.GroupName)
+                    .then(() => {
+                        resolve(matchInfo.Group);
+                    })
+                    .catch((err) => {
+                        this.logger.Write("*****Error in ::CreateNewDeployment*****");
+                        this.logger.Write(JSON.stringify(err));
+                        reject(err);
+                    })
+                    .finally(() => {
+                        const end: number = Date.now();
+                        const duration = end - start;
+                        this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
+                    });
+                }
+            });
         });
     }
 
@@ -228,25 +240,47 @@ export class ContainerServices implements IContainerServices {
         return credentials;
     }
 
-    private async initializeClient() {
+    private async initializeAciClient() {
         return new Promise<void>((resolve, reject) => {
-            if (!this.InitializationComplete) {
+            if (!this.aciClient) {
                 this.logger.Write("Begining SPN login...");
 
                 msrest.loginWithServicePrincipalSecret(this.CLIENT_ID,
                     this.CLIENT_SECRET,
                     this.TENANT_ID
-                ).then((creds) => {
-                    this.logger.Write("SPN login complete. Instance ready to use.");
-                    this.creds = creds;
-                    this.client = new ContainerInstanceManagementClient(this.creds, this.SUBSCRIPTION_ID, undefined, {
+                )
+                .then((creds) => {
+                    this.logger.Write("SPN login complete. AciClient ready to use.");
+                    this.aciClient = new ContainerInstanceManagementClient(creds, this.SUBSCRIPTION_ID, undefined, {
                         longRunningOperationRetryTimeout: 5
                     });
-                    this.InitializationComplete = true;
                     resolve();
                 });
             } else {
-                this.logger.Write("Client already initialized...");
+                this.logger.Write("AciClient already initialized...");
+                resolve();
+            }
+        });
+    }
+
+    private async initializeArmClient() {
+        return new Promise<void>((resolve, reject) => {
+            if (!this.armClient) {
+                this.logger.Write("Begining SPN login...");
+
+                msrest.loginWithServicePrincipalSecret(this.CLIENT_ID,
+                    this.CLIENT_SECRET,
+                    this.TENANT_ID
+                )
+                .then((creds) => {
+                    this.logger.Write("SPN login complete. ArmClient ready to use.");
+                    this.armClient = new ResourceManagementClient.default(creds, this.SUBSCRIPTION_ID, undefined, {
+                        longRunningOperationRetryTimeout: 5
+                    });
+                    resolve();
+                });
+            } else {
+                this.logger.Write("ArmClient already initialized...");
                 resolve();
             }
         });

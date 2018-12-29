@@ -36,6 +36,7 @@ CONTAINER_OS_TYPE=
 CONTAINER_REGISTRY_HOST=
 CONTAINER_REGISTRY_USERNAME=
 CONTAINER_REGISTRY_PASSWORD=
+REPORTING_REFRESH_INTERVAL=
 ```
 
 For local development, you may place a `.env` file in your root folder to set these variables.

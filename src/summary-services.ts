@@ -3,6 +3,7 @@
 //
 import { IContainerServices, ContainerServices} from "./container-services";
 import { ILogger } from "./logging";
+import * as moment from "moment";
 
 export interface ISummaryServices
 {
@@ -21,6 +22,8 @@ export class SummaryServices implements ISummaryServices
 {
     private readonly logger: ILogger;
     private readonly aci: IContainerServices;
+    private refreshIntervalMs: number;
+    private refreshIntervalConfig: string = process.env.REPORTING_REFRESH_INTERVAL || "PT1M";
     private tempData: OverviewDetails = new OverviewDetails();
     
     constructor(logger: ILogger, containerService: IContainerServices)
@@ -29,21 +32,14 @@ export class SummaryServices implements ISummaryServices
         this.aci = containerService;
 
         // Start background timer for this server instance to gather and report data
-        // Interval here is PT1M...shoudl likely pull in Moment correctly handle duration types
+        // Interval here is PT1M
+        this.logger.Write(`Configuring data refresh for ${this.refreshIntervalConfig}...`);
+        this.refreshIntervalMs = moment.duration(this.refreshIntervalConfig).asMilliseconds();
+        
         this.logger.Write("Starting SummaryServices background timer...");
         setInterval(() => {
             this.gatherAndUpdateMetrics();
-        }, 1 * 60 * 1000);
-
-        // Run the update method once on startup (but need to wait for init to be complete)
-        // const waitForAciSerivceInit = () => {
-        //     if (!this.aci.InitializationComplete){
-        //         setTimeout(waitForAciSerivceInit, 1000);
-        //     } else {
-        //         this.gatherAndUpdateMetrics();
-        //     }
-        // };
-        // waitForAciSerivceInit();
+        }, this.refreshIntervalMs);
 
         this.gatherAndUpdateMetrics();
     }
