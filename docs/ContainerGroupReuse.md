@@ -11,4 +11,4 @@ If no matching containers are found, a new Container Group deployment is initiat
 
 ### Garbage Colleciton (TODO)
 
-While we could let container groups exist forever (and just continue being re-used), we may miss any updates to the underlying Docker image since starting a stopped image doesn't pull any image updates. In this case, any containers that are older than one day (24 hours) are removed by a background garbage collection job. This garbage collection could easily be implemented by timer-triggered Function instances, and will be deployed in a later build.
+While we could let container groups exist forever (and just continue being re-used), we may miss any updates to the underlying Docker image since starting a stopped image doesn't pull any image updates. In this case, any containers that are older than one day (24 hours) should likely be removed by a background garbage collection job. This garbage collection could easily be implemented by timer-triggered Function instances, and will be deployed in a later build.
