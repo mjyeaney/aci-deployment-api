@@ -11,7 +11,7 @@ class DataSummary
 interface IApplication
 {
     Initialize(): void;
-    OnNavigationSelected(navItem: string): void;
+    OnNavigationSelected(path: string): void;
 }
 
 class Application implements IApplication {
@@ -24,10 +24,25 @@ class Application implements IApplication {
     public Initialize() {
         // Setup UI events / callbacks
         this.ui.SetupInitialState();
-        
         this.ui.SetNavigationChangedCallback((path: string) => {
-            console.log(`Item selected: ${path}`);
+            this.OnNavigationSelected(path);
         });
+    }
+
+    public OnNavigationSelected(path: string) {
+        console.log(`Item selected: ${path}`);
+        switch (path){
+            case "/overview":
+                this.loadSummaryView();
+                break;
+            case "/instances":
+                this.loadInstanceView();
+                break;
+        }
+    }
+
+    private loadSummaryView(){
+        this.ui.ShowSummaryViewContent();
 
         // Load initial summary data
         this.loadOverviewData();
@@ -38,8 +53,8 @@ class Application implements IApplication {
         }, 60 * 1000);
     }
 
-    public OnNavigationSelected(navItem: string) {
-
+    private loadInstanceView(){
+        this.ui.ShowInstanceDetailContent();
     }
 
     private loadOverviewData() {

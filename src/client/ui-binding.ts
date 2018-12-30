@@ -4,12 +4,15 @@ export interface IUiBinding
 {
     SetupInitialState(): void;
     SetNavigationChangedCallback(onNavigation: (path: string) => void): void;
+    ShowSummaryViewContent(): void;
+    ShowInstanceDetailContent(): void;
 }
 
 export class UiBinding implements IUiBinding
 {
     public SetupInitialState() {
         // Any nav changes / etc.
+        location.hash = "/overview";
     }
 
     public SetNavigationChangedCallback(onNavigation: (path: string) => void) {
@@ -17,7 +20,18 @@ export class UiBinding implements IUiBinding
         $(window).on('hashchange', () => {
             const navTitle = location.hash.replace('#', '');
             onNavigation(navTitle);
-            $(`.navigation li[data-action-name="${navTitle}"]`).click();
+            $(".nav li").removeClass("active");
+            $(`.nav li[data-action-name="${navTitle}"]`).addClass("active");
         });
+    }
+
+    public ShowSummaryViewContent(){
+        $(".content").hide();
+        $("#overviewContent").show();
+    }
+
+    public ShowInstanceDetailContent(){
+        $(".content").hide();
+        $("#instanceDetails").show();
     }
 }
