@@ -12,6 +12,8 @@ The following API methods are exposed from this application:
     * Note this is a synchronous / blocking call - implementing the job/polling mechanism correctly was going to add more work that was necessary for this PoC.
 * `GET /api/deployments/{deployment-name}`
     * This will return details about the specific deployment.
+* `DELETE /api/deployments/{deployment-name}`
+    * This removes (deletes) the specified deployment. Note this does *NOT* stop the instance; rather the entire container group resource is deleted.
 
 ### Building
 
