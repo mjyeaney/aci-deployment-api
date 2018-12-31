@@ -1,3 +1,7 @@
+//
+// Bindings for direct jQuery calls against the DOM
+//
+
 import * as $ from "jquery";
 
 export interface IUiBinding
@@ -6,6 +10,7 @@ export interface IUiBinding
     SetNavigationChangedCallback(onNavigation: (path: string) => void): void;
     ShowSummaryViewContent(): void;
     ShowInstanceDetailContent(): void;
+    RenderTestChart(): void;
 }
 
 export class UiBinding implements IUiBinding
@@ -17,12 +22,15 @@ export class UiBinding implements IUiBinding
 
     public SetNavigationChangedCallback(onNavigation: (path: string) => void) {
         // This method can be used to wire up any initial event handlers
-        $(window).on('hashchange', () => {
-            const navTitle = location.hash.replace('#', '');
-            onNavigation(navTitle);
+        $(window).on("hashchange", () => {
+            const path = location.hash.replace("#", "");
+            onNavigation(path);
             $(".nav li").removeClass("active");
-            $(`.nav li[data-action-name="${navTitle}"]`).addClass("active");
+            $(`.nav li[data-action-name="${path}"]`).addClass("active");
         });
+
+        // Let the callback know where we are (in case there was no change event fired)
+        onNavigation(location.hash.replace("#", ""));
     }
 
     public ShowSummaryViewContent(){
@@ -33,5 +41,9 @@ export class UiBinding implements IUiBinding
     public ShowInstanceDetailContent(){
         $(".content").hide();
         $("#instanceDetails").show();
+    }
+
+    public RenderTestChart(){
+
     }
 }
