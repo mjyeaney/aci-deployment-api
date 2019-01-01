@@ -2,13 +2,13 @@
 // Class for generating SVG line charts used on the overview page
 //
 
-export interface ICharting {
-    CreateLineChartSVG(data: number[][]): string;
+export interface IChart {
+    RenderChart(data: number[][]): string;
 }
 
-export class Charting implements ICharting {
-    public CreateLineChartSVG(data: number[][]) {
-        const prologue = `<svg style="height: 400px; width: 800px;" viewbox="0 0 800 450">`;
+export class LineChart implements IChart {
+    public RenderChart(data: number[][]) {
+        const prologue = `<svg style="height: 300px; width: 500px;" viewbox="0 0 800 400">`;
         const axisLines = this.generateAxisLines();
         const xAxisLabels = this.generateXaxisLables();
         const yAxisLabels = this.generateYaxisLables();
@@ -37,7 +37,6 @@ export class Charting implements ICharting {
             <text x="392" y="400">4:00pm</text>
             <text x="538" y="400">4:30pm</text>
             <text x="684" y="400">5:00pm</text>
-            <text x="400" y="440" class="label-title" style="font-weight: bold;">Time</text>
         </g>
         `;
     }
@@ -49,21 +48,31 @@ export class Charting implements ICharting {
             <text x="80" y="131">10</text>
             <text x="80" y="248">5</text>
             <text x="80" y="373">0</text>
-            <text x="50" y="200" class="label-title" style="font-weight: bold;">Count</text>
         </g>
         `;
     }
 
     private generateSequencePoints(){
-        return `
-        <g class="data">
-            <circle cx="90" cy="192" data-value="7.2" r="3" fill="#090"></circle>
-            <circle cx="240" cy="141" data-value="8.1" r="3" fill="#090"></circle>
-            <circle cx="388" cy="179" data-value="7.7" r="3" fill="#090"></circle>
-            <circle cx="531" cy="370" data-value="6.8" r="3" fill="#090"></circle>
-            <circle cx="677" cy="104" data-value="6.7" r="3" fill="#090"></circle>
-            <polyline points="90,192 240,141 388,179 531,370 677,104" fill="none" stroke="#090" stroke-width="1px" />
-        </g>
-        `;
+        const data: number[][] = [];
+        const size = 240;
+        const scaleFactor = 370.0 / 50;
+        const pointsSvg = [];
+        const polyLinePoints = [];
+
+        for (let j = 0; j < size; j++){
+            data.push([(j * 2.5) + 90, 370.0 - ((Math.random() * 50) * scaleFactor)]);
+        }
+
+        pointsSvg.push("<g class='data'>");
+
+        for (let j = 0; j < data.length; j++){
+            //pointsSvg.push(`<circle cx="${data[j][0]}" cy="${data[j][1]}" r="3" fill="#090"></circle>`);
+            polyLinePoints.push(`${data[j][0]},${data[j][1]} `);
+        }
+
+        pointsSvg.push(`<polyline points="${polyLinePoints.join('')}" fill="none" stroke="#090" stroke-width="1px" />`);
+        pointsSvg.push("</g>");
+        
+        return pointsSvg.join("");
     }
 }

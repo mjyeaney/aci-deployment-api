@@ -10,7 +10,8 @@ export interface IUiBinding
     SetNavigationChangedCallback(onNavigation: (path: string) => void): void;
     ShowSummaryViewContent(): void;
     ShowInstanceDetailContent(): void;
-    RenderTestChart(): void;
+    RenderRunningInstanceChart(chartSvg: string): void;
+    RenderStoppedInstanceChart(chartSvg: string): void;
 }
 
 export class UiBinding implements IUiBinding
@@ -43,7 +44,11 @@ export class UiBinding implements IUiBinding
         $("#instanceDetails").show();
     }
 
-    public RenderTestChart(){
+    public RenderRunningInstanceChart(chartSvg: string){
+        $("#runningInstanceChart").html(chartSvg);
+    }
 
+    public RenderStoppedInstanceChart(chartSvg: string){
+        $("#stoppedInstanceChart").html(chartSvg);
     }
 }

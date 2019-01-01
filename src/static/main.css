@@ -69,7 +69,6 @@ p { margin-bottom: 1em; }
 }
 
 .summaryWidget.number { 
-    width: 12em;
     text-align: center;
     float: left;
 }

@@ -4,6 +4,7 @@
 
 import { IUiBinding, UiBinding } from "./ui-binding";
 import { IServiceApi, ServiceApi } from "./service-api";
+import { IChart, LineChart } from "./charting";
 
 interface IApplication
 {
@@ -14,10 +15,12 @@ interface IApplication
 class Application implements IApplication {
     private ui: IUiBinding;
     private api: IServiceApi;
+    private lineChart: IChart;
 
-    constructor(ui: IUiBinding, api: IServiceApi) {
+    constructor(ui: IUiBinding, api: IServiceApi, lineChart: IChart) {
         this.ui = ui;
         this.api = api;
+        this.lineChart = lineChart;
     }
 
     public Initialize() {
@@ -43,13 +46,14 @@ class Application implements IApplication {
         this.ui.ShowSummaryViewContent();
         this.api.LoadSummaryData();
 
-        // Setup timers to reload data
-        setInterval(() => {
-            this.api.LoadSummaryData();
-        }, 60 * 1000);
+        // // Setup timers to reload data
+        // setInterval(() => {
+        //     this.api.LoadSummaryData();
+        // }, 60 * 1000);
 
-        // TEST:
-        this.ui.RenderTestChart();
+        // setup charts
+        this.ui.RenderRunningInstanceChart(this.lineChart.RenderChart([]));
+        this.ui.RenderStoppedInstanceChart(this.lineChart.RenderChart([]));
     }
 
     private loadInstanceView(){
@@ -58,5 +62,5 @@ class Application implements IApplication {
 }
 
 // Our singleton application instance
-const app = new Application(new UiBinding(), new ServiceApi());
+const app = new Application(new UiBinding(), new ServiceApi(), new LineChart());
 app.Initialize();
