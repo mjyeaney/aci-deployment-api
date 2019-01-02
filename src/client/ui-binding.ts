@@ -23,20 +23,24 @@ export class UiBinding implements IUiBinding
 
     public SetupInitialState() {
         // Any nav changes / etc.
-        location.hash = "/overview";
+        if (location.hash === "") {
+            location.hash = "/overview";
+        }
     }
 
     public SetNavigationChangedCallback(onNavigation: (path: string) => void) {
-        // This method can be used to wire up any initial event handlers
-        $(window).on("hashchange", () => {
+        const worker = () => {
             const path = location.hash.replace("#", "");
             onNavigation(path);
             $(".nav li").removeClass("active");
             $(`.nav li[data-action-name="${path}"]`).addClass("active");
-        });
+        };
+
+        // This method can be used to wire up any initial event handlers
+        $(window).on("hashchange", worker);
 
         // Let the callback know where we are (in case there was no change event fired)
-        onNavigation(location.hash.replace("#", ""));
+        worker();
     }
 
     public ShowSummaryViewContent(data: any){

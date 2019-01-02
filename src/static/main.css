@@ -17,7 +17,7 @@ h1, h2, h3 { font-weight: normal; }
 p { margin-bottom: 1em; }
 
 .header { 
-    position: absolute; 
+    position: fixed; 
     left: 0;
     right: 0;
     top: 0;
@@ -36,7 +36,7 @@ p { margin-bottom: 1em; }
 }
 
 .nav { 
-    position: absolute;
+    position: fixed;
     left: 0;
     top: 4em;
     bottom: 0;
@@ -58,6 +58,7 @@ p { margin-bottom: 1em; }
     bottom: 0;
     padding: 1em;
     display: none;
+    z-index: -1;
 }
 
 .summaryWidget {
@@ -71,6 +72,7 @@ p { margin-bottom: 1em; }
 .summaryWidget.number { 
     text-align: center;
     float: left;
+    width: 45%;
 }
 
 .summaryWidget.number p span {
@@ -91,4 +93,8 @@ p { margin-bottom: 1em; }
     width: 5em;
     text-align: right;
     display: inline-block;
+}
+
+.summaryWidget .chartContainer {
+    margin-top: 1em;
 }
