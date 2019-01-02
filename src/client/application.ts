@@ -15,12 +15,10 @@ interface IApplication
 class Application implements IApplication {
     private ui: IUiBinding;
     private api: IServiceApi;
-    private lineChart: IChart;
 
-    constructor(ui: IUiBinding, api: IServiceApi, lineChart: IChart) {
+    constructor(ui: IUiBinding, api: IServiceApi) {
         this.ui = ui;
         this.api = api;
-        this.lineChart = lineChart;
     }
 
     public Initialize() {
@@ -42,18 +40,9 @@ class Application implements IApplication {
         }
     }
 
-    private loadSummaryView(){
-        this.ui.ShowSummaryViewContent();
-        this.api.LoadSummaryData();
-
-        // // Setup timers to reload data
-        // setInterval(() => {
-        //     this.api.LoadSummaryData();
-        // }, 60 * 1000);
-
-        // setup charts
-        this.ui.RenderRunningInstanceChart(this.lineChart.RenderChart([]));
-        this.ui.RenderStoppedInstanceChart(this.lineChart.RenderChart([]));
+    private async loadSummaryView(){
+        const data = await this.api.LoadSummaryData();
+        this.ui.ShowSummaryViewContent(data);
     }
 
     private loadInstanceView(){
@@ -62,5 +51,5 @@ class Application implements IApplication {
 }
 
 // Our singleton application instance
-const app = new Application(new UiBinding(), new ServiceApi(), new LineChart());
+const app = new Application(new UiBinding(new LineChart()), new ServiceApi());
 app.Initialize();

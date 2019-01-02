@@ -7,7 +7,7 @@
 import * as $ from "jquery";
 
 export interface IServiceApi {
-    LoadSummaryData(): void;
+    LoadSummaryData(): Promise<any>;
 }
 
 class SequenceSummary {
@@ -18,21 +18,15 @@ class SequenceSummary {
 
 export class ServiceApi implements IServiceApi {
     public LoadSummaryData() {
-        $.ajax({
-            method: "GET",
-            url: "/api/overviewSummary"
-        }).done((results) => {
-            let runningSummary = this.getSequenceSummary(results.RunningInstanceCounts);
-            $("#runningInstanceCount").text(results.RunningInstances);
-            $("#running-min").text(runningSummary.Minimum);
-            $("#running-avg").text(runningSummary.Average.toFixed(2));
-            $("#running-max").text(runningSummary.Maximum);
-            
-            let stoppedSummary = this.getSequenceSummary(results.StoppedInstanceCounts);
-            $("#stoppedInstanceCount").text(results.StoppedInstances);
-            $("#stopped-min").text(stoppedSummary.Minimum);
-            $("#stopped-avg").text(stoppedSummary.Average.toFixed(2));
-            $("#stopped-max").text(stoppedSummary.Maximum);
+        return new Promise<void>((resolve, reject) => {
+            $.ajax({
+                method: "GET",
+                url: "/api/overviewSummary"
+            }).done((results) => {
+                results.RunningSummary = this.getSequenceSummary(results.RunningInstanceCounts);
+                results.StoppedSummary = this.getSequenceSummary(results.StoppedInstanceCounts);
+                resolve(results);
+            });
         });
     }
 
