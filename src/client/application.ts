@@ -4,7 +4,7 @@
 
 import { IUiBinding, UiBinding } from "./ui-binding";
 import { IServiceApi, ServiceApi } from "./service-api";
-import { IChart, LineChart } from "./charting";
+import { LineChart } from "./charting";
 
 interface IApplication
 {

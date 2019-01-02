@@ -22,32 +22,32 @@ export class UiBinding implements IUiBinding
     }
 
     public SetupInitialState() {
-        // Any nav changes / etc.
+        // Don't override current location if one is specified
         if (location.hash === "") {
             location.hash = "/overview";
         }
     }
 
     public SetNavigationChangedCallback(onNavigation: (path: string) => void) {
-        const worker = () => {
+        const updateUiForPath = () => {
             const path = location.hash.replace("#", "");
-            onNavigation(path);
             $(".nav li").removeClass("active");
             $(`.nav li[data-action-name="${path}"]`).addClass("active");
+            onNavigation(path);
         };
 
         // This method can be used to wire up any initial event handlers
-        $(window).on("hashchange", worker);
+        $(window).on("hashchange", updateUiForPath);
 
-        // Let the callback know where we are (in case there was no change event fired)
-        worker();
+        // Fire on initial run incase there is no hash-change event (i.e., bookmark)
+        updateUiForPath();
     }
 
     public ShowSummaryViewContent(data: any){
         $(".content").hide();
         $("#overviewContent").show();
-        $("#runningInstanceChart").html(this.lineChartGenerator.RenderChart(data.RunningInstanceCounts));
-        $("#stoppedInstanceChart").html(this.lineChartGenerator.RenderChart(data.StoppedInstanceCounts));
+        $("#runningInstanceChart").html(this.lineChartGenerator.Render(data.RunningInstanceCounts));
+        $("#stoppedInstanceChart").html(this.lineChartGenerator.Render(data.StoppedInstanceCounts));
 
         $("#runningInstanceCount").text(data.RunningInstances);
         $("#running-min").text(data.RunningInstanceSummary.Minimum);

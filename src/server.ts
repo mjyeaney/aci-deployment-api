@@ -3,7 +3,7 @@ import * as express from "express";
 import * as bodyParser from "body-parser";
 import { ILogger, ConsoleLogger } from "./logging";
 import * as containerServices from "./container-services";
-import * as summaryServices from "./summary-services";
+import * as summaryServices from "./reporting-service";
 
 // Init environment
 dotenv.config();
