@@ -20,40 +20,44 @@
 
         <div class="content" id="overviewContent">
             <div class="summaryWidget number fLeft">
-                <p><span id="runningInstanceCount">0</span>Running Instances</p>
-                <ul>
-                    <li>
-                        <span class="numeric-label">Min:</span>
-                        <span class="numeric-data" id="running-min">0.0</span>
-                    </li>
-                    <li>
-                        <span class="numeric-label">Avg:</span>
-                        <span class="numeric-data" id="running-avg">0.0</span>
-                    </li>
-                    <li>
-                        <span class="numeric-label">Max:</span>
-                        <span class="numeric-data" id="running-max">0.0</span>
-                    </li>
-                </ul>
                 <div id="runningInstanceChart" class="chartContainer"></div>
+                <div class="textContainer">
+                    <p>Running Instances (last hour): <span id="runningInstanceCount">0</span></p>
+                    <ul>
+                        <li>
+                            <span class="numeric-label">Min:</span>
+                            <span class="numeric-data" id="running-min">0.0</span>
+                        </li>
+                        <li>
+                            <span class="numeric-label">Avg:</span>
+                            <span class="numeric-data" id="running-avg">0.0</span>
+                        </li>
+                        <li>
+                            <span class="numeric-label">Max:</span>
+                            <span class="numeric-data" id="running-max">0.0</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
             <div class="summaryWidget number fRight">
-                <p><span id="stoppedInstanceCount">0</span>Stopped Instances</p>
-                <ul>
-                    <li>
-                        <span class="numeric-label">Min:</span>
-                        <span class="numeric-data" id="stopped-min">0.0</span>
-                    </li>
-                    <li>
-                        <span class="numeric-label">Avg:</span>
-                        <span class="numeric-data" id="stopped-avg">0.0</span>
-                    </li>
-                    <li>
-                        <span class="numeric-label">Max:</span>
-                        <span class="numeric-data" id="stopped-max">0.0</span>
-                    </li>
-                </ul>
                 <div id="stoppedInstanceChart" class="chartContainer"></div>
+                <div class="textContainer">
+                    <p>Paused Instances (last hour): <span id="stoppedInstanceCount">0</span></p>
+                    <ul>
+                        <li>
+                            <span class="numeric-label">Min:</span>
+                            <span class="numeric-data" id="stopped-min">0.0</span>
+                        </li>
+                        <li>
+                            <span class="numeric-label">Avg:</span>
+                            <span class="numeric-data" id="stopped-avg">0.0</span>
+                        </li>
+                        <li>
+                            <span class="numeric-label">Max:</span>
+                            <span class="numeric-data" id="stopped-max">0.0</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
 

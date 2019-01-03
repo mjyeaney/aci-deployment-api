@@ -4,24 +4,11 @@
 // NOTE: The UI manipulatino needs fatored out of here..just copy/pasta'd for now.
 //
 
+import { OverviewDetails } from "../common-types";
+
 export interface IServiceApi {
     LoadSummaryData(): Promise<OverviewDetails>;
     LoadInstancesData(): Promise<any>;
-}
-
-export class OverviewDetails {
-    RunningInstances: number = 0;
-    StoppedInstances: number = 0;
-    RunningInstanceCounts: number[] = [];
-    RunningSummary: SequenceSummary = new SequenceSummary();
-    StoppedInstanceCounts: number[] = [];
-    StoppedSummary: SequenceSummary = new SequenceSummary();
-}
-
-export class SequenceSummary {
-    Minimum: number = 0;
-    Maximum: number = 0;
-    Average: number = 0;
 }
 
 export class ServiceApi implements IServiceApi {

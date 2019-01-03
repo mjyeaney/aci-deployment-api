@@ -38,8 +38,8 @@ export class ContainerServices implements IContainerServices {
     private readonly CONTAINER_REGISTRY_PASSWORD = process.env.CONTAINER_REGISTRY_PASSWORD || "";
 
     private readonly logger: ILogger;
-    private aciClient!: ContainerInstanceManagementClient;
-    private armClient!: ResourceManagementClient.default;
+    private aciClient: ContainerInstanceManagementClient | undefined;
+    private armClient: ResourceManagementClient.default | undefined;
 
     constructor(logger: ILogger) {
         this.logger = logger;
@@ -51,7 +51,7 @@ export class ContainerServices implements IContainerServices {
             this.initializeAciClient().then(() => {
 
                 // List container instances / groups
-                this.aciClient.containerGroups.list().then((containerGroups) => {
+                this.aciClient!.containerGroups.list().then((containerGroups) => {
                     resolve(containerGroups);
                 }).catch((err) => {
                     this.logger.Write("*****Error in ::GetDeployments*****");
@@ -72,7 +72,7 @@ export class ContainerServices implements IContainerServices {
             this.initializeAciClient().then(() => {
 
                 // List container instances / groups
-                this.aciClient.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName)
+                this.aciClient!.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName)
                 .then((containerGroup) => {
                     resolve(containerGroup);
                 })
@@ -98,10 +98,10 @@ export class ContainerServices implements IContainerServices {
                 return this.initializeArmClient();
             })
             .then(() => {
-                return this.aciClient.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName);
+                return this.aciClient!.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName);
             })
             .then((group) => {
-                return this.armClient.resources.deleteById(group.id!, "2018-10-01");
+                return this.armClient!.resources.deleteById(group.id!, "2018-10-01");
             })
             .then(() => {
                 resolve();
@@ -127,7 +127,7 @@ export class ContainerServices implements IContainerServices {
                 if (!matchInfo.Group) {
                     // Create a container group - there was no match
                     this.logger.Write("Starting new container group deployment (no match found)...");
-                    this.aciClient.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, matchInfo.GroupName, {
+                    this.aciClient!.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, matchInfo.GroupName, {
                         containers: [{
                             name: "default-container",
                             image: this.CONTAINER_IMAGE_NAME,
@@ -166,7 +166,7 @@ export class ContainerServices implements IContainerServices {
                     });
                 } else {
                     this.logger.Write("Starting existing container group (match found)...");
-                    this.aciClient.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.GroupName)
+                    this.aciClient!.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.GroupName)
                     .then(() => {
                         resolve(matchInfo.Group);
                     })

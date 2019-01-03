@@ -16,9 +16,6 @@ input, select, textarea {
 h1, h2, h3 { font-weight: normal; }
 p { margin-bottom: 1em; }
 
-.fRight { float: right; }
-.fLeft { float: left; }
-
 .header { 
     position: fixed; 
     left: 0;
@@ -61,25 +58,29 @@ p { margin-bottom: 1em; }
     bottom: 0;
     padding: 1em;
     display: none;
-    z-index: -1;
+    overflow: hidden;
     overflow-y: scroll;
 }
 
 .summaryWidget {
     border: 1px solid #c0c0c0;
-    border-radius: 5px;
     font-size: .875em;
     padding: .5em;
+    float: left;
+    margin-right: 1em;
+    margin-bottom: 1em;
 }
 
 .summaryWidget.number { 
-    text-align: center;
-    width: 47%;
+    width: 30em;
 }
 
 .summaryWidget.number p span {
     display: block;
-    font-size: 4em;
+    font-size: 2em;
+    border-left: 5px solid #0078d4;
+    margin-top: .5em;
+    padding-left: .5em;
 }
 
 .summaryWidget.number ul {
@@ -98,5 +99,10 @@ p { margin-bottom: 1em; }
 }
 
 .summaryWidget .chartContainer {
-    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.summaryWidget .textContainer {
+    margin: 1em;
+    font-size: .875em;
 }

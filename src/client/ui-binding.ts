@@ -4,12 +4,13 @@
 
 import * as $ from "jquery";
 import { IChart, LineChart } from "./charting";
+import { OverviewDetails } from "../common-types";
 
 export interface IUiBinding
 {
     SetupInitialState(): void;
     SetNavigationChangedCallback(onNavigation: (path: string) => void): void;
-    ShowSummaryViewContent(data: any): void;
+    ShowSummaryViewContent(data: OverviewDetails): void;
     ShowInstanceDetailContent(): void;
 }
 
@@ -43,7 +44,7 @@ export class UiBinding implements IUiBinding
         updateUiForPath();
     }
 
-    public ShowSummaryViewContent(data: any){
+    public ShowSummaryViewContent(data: OverviewDetails){
         $(".content").hide();
         $("#overviewContent").show();
         $("#runningInstanceChart").html(this.lineChartGenerator.Render(data.RunningInstanceCounts));

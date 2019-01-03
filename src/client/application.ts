@@ -16,6 +16,8 @@ class Application implements IApplication {
     private ui: IUiBinding;
     private api: IServiceApi;
 
+    private hTimer: NodeJS.Timer | undefined;
+
     constructor(ui: IUiBinding, api: IServiceApi) {
         this.ui = ui;
         this.api = api;
@@ -43,6 +45,15 @@ class Application implements IApplication {
     private async loadSummaryView(){
         const data = await this.api.LoadSummaryData();
         this.ui.ShowSummaryViewContent(data);
+
+        if (this.hTimer) {
+            clearInterval(this.hTimer);
+        }
+
+        this.hTimer = setInterval(async () => {
+            const data = await this.api.LoadSummaryData();
+            this.ui.ShowSummaryViewContent(data);
+        }, 1000 * 60);
     }
 
     private loadInstanceView(){
