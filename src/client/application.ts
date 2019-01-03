@@ -1,61 +1,66 @@
-import * as $ from "jquery";
+//
+// Core application orchestration logic.
+//
 
-class DataSummary
+import { IUiBinding, UiBinding } from "./ui-binding";
+import { IServiceApi, ServiceApi } from "./service-api";
+import { LineChart } from "./charting";
+
+interface IApplication
 {
-    Minimum: number = 0;
-    Maximum: number = 0;
-    Average: number = 0;
+    Initialize(): void;
+    OnNavigationSelected(path: string): void;
 }
 
-class Application {
+class Application implements IApplication {
+    private ui: IUiBinding;
+    private api: IServiceApi;
+
+    private hTimer: NodeJS.Timer | undefined;
+
+    constructor(ui: IUiBinding, api: IServiceApi) {
+        this.ui = ui;
+        this.api = api;
+    }
+
     public Initialize() {
-        // Load initial summary data
-        this.loadOverviewData();
-
-        // Setup timers to reload data
-        setInterval(() => {
-            this.loadOverviewData();
-        }, 60 * 1000);
-    }
-
-    private loadOverviewData(): void {
-        $.ajax({
-            method: "GET",
-            url: "/api/overviewSummary"
-        }).done((results) => {
-            let runningSummary = this.getSequenceSummary(results.RunningInstanceCounts);
-            let stoppedSummary = this.getSequenceSummary(results.StoppedInstanceCounts);
-            $("#runningInstanceCount").text(results.RunningInstances);
-            $("#running-min").text(runningSummary.Minimum);
-            $("#running-avg").text(runningSummary.Average.toFixed(2));
-            $("#running-max").text(runningSummary.Maximum);
-            $("#stoppedInstanceCount").text(results.StoppedInstances);
-            $("#stopped-min").text(stoppedSummary.Minimum);
-            $("#stopped-avg").text(stoppedSummary.Average.toFixed(2));
-            $("#stopped-max").text(stoppedSummary.Maximum);
+        this.ui.SetupInitialState();
+        this.ui.SetNavigationChangedCallback((path: string) => {
+            this.OnNavigationSelected(path);
         });
     }
 
-    private getSequenceSummary(data: number[]): DataSummary
-    {
-        let s = new DataSummary();
-        s.Minimum = Number.MAX_SAFE_INTEGER;
-        s.Maximum = Number.MIN_SAFE_INTEGER;
-        let sum = 0.0;
+    public OnNavigationSelected(path: string) {
+        console.log(`Item selected: ${path}`);
+        switch (path){
+            case "/overview":
+                this.loadSummaryView();
+                break;
+            case "/instances":
+                this.loadInstanceView();
+                break;
+        }
+    }
 
-        data.map((n) => {
-            if (n < s.Minimum) s.Minimum = n;
-            if (n > s.Maximum) s.Maximum = n;
-            sum += n;
-        });
+    private async loadSummaryView(){
+        const data = await this.api.LoadSummaryData();
+        this.ui.ShowSummaryViewContent(data);
 
-        s.Average = data.length == 0 ? 0.0 : (sum / data.length);
-        return s;
+        if (this.hTimer) {
+            clearInterval(this.hTimer);
+        }
+
+        this.hTimer = setInterval(async () => {
+            const data = await this.api.LoadSummaryData();
+            this.ui.ShowSummaryViewContent(data);
+        }, 1000 * 60);
+    }
+
+    private loadInstanceView(){
+        this.ui.ShowInstanceDetailContent();
     }
 }
 
 // Our singleton application instance
-const app = new Application();
-$(() => {
-    app.Initialize();
-});
+const app = new Application(new UiBinding(new LineChart()), new ServiceApi());
+app.Initialize();

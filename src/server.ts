@@ -3,18 +3,16 @@ import * as express from "express";
 import * as bodyParser from "body-parser";
 import { ILogger, ConsoleLogger } from "./logging";
 import * as containerServices from "./container-services";
-import * as summaryServices from "./summary-services";
+import * as summaryServices from "./reporting-service";
 
 // Init environment
 dotenv.config();
 
-// Setup logger
+// Setup services
 const logger: ILogger = new ConsoleLogger();
-
-// Init ACI services and the express engine
 const app: express.Application = express();
-const aci = new containerServices.ContainerServices();
-const reporting = new summaryServices.SummaryServices(aci);
+const aci = new containerServices.ContainerServices(logger);
+const reporting = new summaryServices.SummaryServices(logger, aci);
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
 // and JSON
@@ -47,7 +45,7 @@ app.post("/api/test/getGroupInfo", async (req: express.Request, resp: express.Re
 // Main API methods
 //
 app.get("/api/overviewSummary", async (req: express.Request, resp: express.Response) => {
-    logger.LogMessage("Executing GET /api/overviewSummary...");
+    logger.Write("Executing GET /api/overviewSummary...");
     setNoCache(resp);
     reporting.GetOverviewDetails().then((data) => {
         resp.json(data);
@@ -56,7 +54,7 @@ app.get("/api/overviewSummary", async (req: express.Request, resp: express.Respo
     })
 });
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
-    logger.LogMessage("Executing GET /api/deployments...");
+    logger.Write("Executing GET /api/deployments...");
     setNoCache(resp);
     aci.GetDeployments().then((data) => {
         resp.json(data);
@@ -65,11 +63,11 @@ app.get("/api/deployments", async (req: express.Request, resp: express.Response)
     });
 });
 app.post("/api/deployments", async (req: express.Request, resp: express.Response) => {
-    logger.LogMessage("Executing POST /api/deployments...");
+    logger.Write("Executing POST /api/deployments...");
     setNoCache(resp);
     
     if ((!req.body) || (!req.body.numCpu) || (!req.body.memoryInGB)) {
-        logger.LogMessage("Invalid request to /api/deployments");
+        logger.Write("Invalid request to /api/deployments");
         resp.status(400).end();
     } else {
         aci.CreateNewDeployment(req.body.numCpu, req.body.memoryInGB).then((data) => {
@@ -80,10 +78,19 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
     }
 });
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
-    logger.LogMessage(`Executing GET /api/deployments/${req.params.deploymentId}...`);
+    logger.Write(`Executing GET /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
     aci.GetDeployment(req.params.deploymentId).then((data) => {
         resp.json(data);
+    }).catch((reason) => {
+        resp.status(500).json(reason);
+    });
+});
+app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
+    logger.Write(`Executing DELETE /api/deployments/${req.params.deploymentId}...`);
+    setNoCache(resp);
+    aci.DeleteDeployment(req.params.deploymentId).then(() => {
+        resp.status(200).end();
     }).catch((reason) => {
         resp.status(500).json(reason);
     });
@@ -102,5 +109,5 @@ app.use(express.static(__dirname, {
 const server = app.listen(port, function () {
     var host = server.address().address;
     var port = server.address().port;
-    logger.LogMessage(`Server now listening at http://${host}:${port}`);
+    logger.Write(`Server now listening at http://${host}:${port}`);
 });
