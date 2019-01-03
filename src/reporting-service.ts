@@ -76,8 +76,8 @@ export class SummaryServices implements ISummaryServices {
         currentData.StoppedInstanceCounts.push(stoppedCount);
 
         // Apply clamping
-        currentData.RunningInstanceCounts = currentData.RunningInstanceCounts.slice(-144);
-        currentData.StoppedInstanceCounts = currentData.StoppedInstanceCounts.slice(-144);
+        currentData.RunningInstanceCounts = currentData.RunningInstanceCounts.slice(-12);
+        currentData.StoppedInstanceCounts = currentData.StoppedInstanceCounts.slice(-12);
         currentData.RunningSummary = this.getSequenceSummary(currentData.RunningInstanceCounts);
         currentData.StoppedSummary = this.getSequenceSummary(currentData.StoppedInstanceCounts);
 

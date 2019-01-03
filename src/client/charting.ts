@@ -3,12 +3,12 @@
 //
 
 export interface IChart {
-    Render(data: number[][]): string;
+    Render(data: number[]): string;
 }
 
 export class LineChart implements IChart {
-    public Render(data: number[][]) {
-        const prologue = `<svg style="height: 300px; width: 100%;" viewbox="0,0 500,300">`;
+    public Render(data: number[]) {
+        const prologue = `<svg style="height: auto; width: 100%;" viewbox="0,0 500,300">`;
         const axisLines = this.generateAxisLines();
         const xAxisLabels = this.generateXaxisLabels();
         const yAxisLabels = this.generateYaxisLabels();
@@ -54,14 +54,14 @@ export class LineChart implements IChart {
         `;
     }
 
-    private generateSequencePoints(data: number[][]) {
+    private generateSequencePoints(data: number[]) {
         const scaledData: number[][] = [];
         const scaleFactor = 255.0 / 50;
         const pointsSvg = [];
         const polyLinePoints = [];
 
         for (let j = 0; j < data.length; j++) {
-            scaledData.push([45 + (j * 18.69), 270.0 - ((data[j][1]) * scaleFactor)]);
+            scaledData.push([45 + (j * 18.69), 270.0 - ((data[j]) * scaleFactor)]);
         }
 
         pointsSvg.push("<g class='data'>");

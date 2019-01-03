@@ -50,14 +50,14 @@ export class UiBinding implements IUiBinding
         $("#stoppedInstanceChart").html(this.lineChartGenerator.Render(data.StoppedInstanceCounts));
 
         $("#runningInstanceCount").text(data.RunningInstances);
-        $("#running-min").text(data.RunningInstanceSummary.Minimum);
-        $("#running-avg").text(data.RunningInstanceSummary.Average.toFixed(2));
-        $("#running-max").text(data.RunningInstanceSummary.Maximum);
+        $("#running-min").text(data.RunningSummary.Minimum);
+        $("#running-avg").text(data.RunningSummary.Average.toFixed(2));
+        $("#running-max").text(data.RunningSummary.Maximum);
         
         $("#stoppedInstanceCount").text(data.StoppedInstances);
-        $("#stopped-min").text(data.StoppedSummary.stoppedSummary.Minimum);
-        $("#stopped-avg").text(data.StoppedSummary.stoppedSummary.Average.toFixed(2));
-        $("#stopped-max").text(data.StoppedSummary.stoppedSummary.Maximum);
+        $("#stopped-min").text(data.StoppedSummary.Minimum);
+        $("#stopped-avg").text(data.StoppedSummary.Average.toFixed(2));
+        $("#stopped-max").text(data.StoppedSummary.Maximum);
     }
 
     public ShowInstanceDetailContent(){

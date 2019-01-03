@@ -5,12 +5,28 @@
 //
 
 export interface IServiceApi {
-    LoadSummaryData(): Promise<any>;
+    LoadSummaryData(): Promise<OverviewDetails>;
+    LoadInstancesData(): Promise<any>;
+}
+
+export class OverviewDetails {
+    RunningInstances: number = 0;
+    StoppedInstances: number = 0;
+    RunningInstanceCounts: number[] = [];
+    RunningSummary: SequenceSummary = new SequenceSummary();
+    StoppedInstanceCounts: number[] = [];
+    StoppedSummary: SequenceSummary = new SequenceSummary();
+}
+
+export class SequenceSummary {
+    Minimum: number = 0;
+    Maximum: number = 0;
+    Average: number = 0;
 }
 
 export class ServiceApi implements IServiceApi {
     public LoadSummaryData() {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<OverviewDetails>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("GET", "/api/overviewSummary");
             xhr.onload = () => {
@@ -21,6 +37,13 @@ export class ServiceApi implements IServiceApi {
                 }
             };
             xhr.send();
+        });
+    }
+
+    public LoadInstancesData() {
+        return new Promise<any>((resolve, reject) => {
+            // TODO:
+            resolve();
         });
     }
 }

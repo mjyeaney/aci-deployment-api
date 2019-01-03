@@ -16,6 +16,9 @@ input, select, textarea {
 h1, h2, h3 { font-weight: normal; }
 p { margin-bottom: 1em; }
 
+.fRight { float: right; }
+.fLeft { float: left; }
+
 .header { 
     position: fixed; 
     left: 0;
@@ -59,20 +62,19 @@ p { margin-bottom: 1em; }
     padding: 1em;
     display: none;
     z-index: -1;
+    overflow-y: scroll;
 }
 
 .summaryWidget {
     border: 1px solid #c0c0c0;
     border-radius: 5px;
-    margin: 0 1em 1em 0;
     font-size: .875em;
     padding: .5em;
 }
 
 .summaryWidget.number { 
     text-align: center;
-    float: left;
-    width: 45%;
+    width: 47%;
 }
 
 .summaryWidget.number p span {
