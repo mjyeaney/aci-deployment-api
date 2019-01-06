@@ -37,7 +37,7 @@ class Application implements IApplication {
                 this.loadConfiView();
                 this.loadSummaryView();
                 break;
-            case "/instances":
+            case "/deployments":
                 this.loadInstanceView();
                 break;
         }

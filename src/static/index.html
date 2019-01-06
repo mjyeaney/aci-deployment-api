@@ -14,7 +14,7 @@
         <div class="nav">
             <ul>
                 <li data-action-name="/overview"><a href="#/overview" title="Overview">Overview</a></li>
-                <li data-action-name="/instances"><a href="#/instances" title="Instances">Instances</a></li>
+                <li data-action-name="/deployments"><a href="#/deployments" title="Deployments">Deployments</a></li>
             </ul>
         </div>
 
@@ -85,7 +85,48 @@
         </div>
 
         <div class="content" id="instanceDetails">
-            <h3>Running Instances</h3>
+            <h3>Running Deployments</h3>
+
+            <div class="tableWidget">
+                <table>
+                    <colgroup>
+                        <col width="30%" />
+                        <col width="30%" />
+                        <col width="20%" />
+                        <col width="20%" />
+                    </colgroup>
+                    <tr>
+                        <th>Container Group Name</th>
+                        <th>IP Address</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    <tr>
+                        <td>aci-inst-00001</td>
+                        <td>128.118.5.33</td>
+                        <td>Running</td>
+                        <td>Stop Delete</td>
+                    </tr>
+                    <tr>
+                        <td>aci-inst-00002</td>
+                        <td>10.0.5.1</td>
+                        <td>Stopped</td>
+                        <td>Stop Delete</td>
+                    </tr>
+                    <tr>
+                        <td>aci-inst-00003</td>
+                        <td>192.168.3.4</td>
+                        <td>Running</td>
+                        <td>Stop Delete</td>
+                    </tr>
+                    <tr>
+                        <td>aci-inst-00004</td>
+                        <td>27.98.4.133</td>
+                        <td>Running</td>
+                        <td>Stop Delete</td>
+                    </tr>
+                </table>
+            </div>
         </div>
     </body>
 
