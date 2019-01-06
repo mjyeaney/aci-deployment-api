@@ -4,7 +4,8 @@
 
 import * as $ from "jquery";
 import { IChart, LineChart } from "./charting";
-import { OverviewDetails, ConfigurationDetails } from "../common-types";
+import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow } from "../common-types";
+import { DeploymentsGrid } from "./deployments-grid";
 
 export interface IUiBinding
 {
@@ -12,7 +13,7 @@ export interface IUiBinding
     SetNavigationChangedCallback(onNavigation: (path: string) => void): void;
     ShowConfigurationData(data: ConfigurationDetails): void;
     ShowSummaryViewContent(data: OverviewDetails): void;
-    ShowInstanceDetailContent(): void;
+    ShowInstanceDetailContent(data: ContainerGroupGridRow[]): void;
 }
 
 export class UiBinding implements IUiBinding
@@ -74,8 +75,11 @@ export class UiBinding implements IUiBinding
         $("#stopped-max").text(data.StoppedSummary.Maximum);
     }
 
-    public ShowInstanceDetailContent(){
+    public ShowInstanceDetailContent(data: ContainerGroupGridRow[]){
         $(".content").hide();
         $("#instanceDetails").show();
+
+        const grid = new DeploymentsGrid();
+        $("#deploymentsGrid").html(grid.Render(data));
     }
 }

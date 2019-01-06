@@ -52,9 +52,7 @@ class Application implements IApplication {
         const data = await this.api.LoadSummaryData();
         this.ui.ShowSummaryViewContent(data);
 
-        if (this.hTimer) {
-            clearInterval(this.hTimer);
-        }
+        this.clearRefreshTimers();
 
         this.hTimer = setInterval(async () => {
             const data = await this.api.LoadSummaryData();
@@ -62,8 +60,16 @@ class Application implements IApplication {
         }, 1000 * 60);
     }
 
-    private loadInstanceView(){
-        this.ui.ShowInstanceDetailContent();
+    private async loadInstanceView(){
+        this.clearRefreshTimers();
+        const data = await this.api.LoadInstancesData();
+        this.ui.ShowInstanceDetailContent(data);
+    }
+
+    private clearRefreshTimers(){
+        if (this.hTimer) {
+            clearInterval(this.hTimer);
+        }
     }
 }
 

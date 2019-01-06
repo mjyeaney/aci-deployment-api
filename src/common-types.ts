@@ -28,3 +28,12 @@ export class ConfigurationDetails {
     ContainerOs: string | undefined;
     ReportingRefreshInterval: string | undefined;
 }
+
+export class ContainerGroupGridRow {
+    Name?: string;
+    Status?: string;
+    CpuCount: number = 0;
+    MemoryInGB: number = 0;
+    IpAddress?: string;
+    OsType?: string;
+}

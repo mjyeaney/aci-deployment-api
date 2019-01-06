@@ -192,7 +192,7 @@ export class ContainerServices implements IContainerServices {
         const groups = await this.GetDeployments();
 
         const groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
-            return await this.GetDeployment(group.name!);
+            return this.GetDeployment(group.name!);
         }));
 
         const matched = groupStatus.some((details) => {
@@ -217,11 +217,10 @@ export class ContainerServices implements IContainerServices {
 
     public async GetFullConatinerDetails(): Promise<ContainerGroup[]> {
         // list all existing groups
-        let groupName: string = "";
         this.logger.Write("Listing group deployments...");
-        let groups = await this.GetDeployments();
-        let groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
-            return await this.GetDeployment(group.name!);
+        const groups = await this.GetDeployments();
+        const groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
+            return this.GetDeployment(group.name!);
         }));
         return groupStatus;
     }
