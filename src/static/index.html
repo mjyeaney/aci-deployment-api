@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>ACI Instance Manager - Overview</title>
+        <title>ACI Deployments - Overview</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600"" rel="stylesheet"" type="text/css"" />
         <link rel="stylesheet" href="/static/main.css?ver=TIMESTAMP" type="text/css" />
     </head>
     <body>
         <div class="header">
-            <h1>ACI Instance Manager</h1>
+            <h1>ACI Deployments</h1>
         </div>
 
         <div class="nav">
@@ -19,6 +19,24 @@
         </div>
 
         <div class="content" id="overviewContent">
+            <div class="overviewWidget">
+                <ul>
+                    <li>Tenant ID:<span>XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX</span></li>
+                    <li>Subscription ID:<span>XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX</span></li>
+                    <li>Region:<span>XXXX</span></li>
+                    <li>Resource Group:<span>XXXX</span></li>
+                </ul>
+            </div>
+
+            <div class="overviewWidget">
+                <ul>
+                    <li>Container Image:<span>XXXXX</span></li>
+                    <li>Container Port:<span>XXXX</span></li>
+                    <li>Container OS:<span>XXXX</span></li>
+                    <li>Reporting Refresh Interval:<span>XXXX</span></li>
+                </ul>
+            </div>
+            
             <div class="summaryWidget number fLeft">
                 <div id="runningInstanceChart" class="chartContainer"></div>
                 <div class="textContainer">
@@ -39,6 +57,7 @@
                     </ul>
                 </div>
             </div>
+
             <div class="summaryWidget number fRight">
                 <div id="stoppedInstanceChart" class="chartContainer"></div>
                 <div class="textContainer">

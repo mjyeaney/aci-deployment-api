@@ -2,13 +2,13 @@
 html, body { height: 100%; }
 body { 
     font-family: "Open Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; 
-    font-size: 15px; 
+    font-size: 13px; 
     color: #111; 
     background-color: #fff; 
 }
 input, select, textarea { 
     font-family: "Open Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; 
-    font-size: 15px; 
+    font-size: 13px; 
     color: #000; 
     border: 1px solic #c0c0c0; 
     padding: 3px; 
@@ -62,9 +62,31 @@ p { margin-bottom: 1em; }
     overflow-y: scroll;
 }
 
+.overviewWidget {
+    margin-bottom: 1em;
+    width: 30em;
+    float: left;
+    padding: .5em;
+    margin-right: 1em;
+}
+
+.overviewWidget ul {
+    list-style-type: none;
+}
+
+.overviewWidget ul li {
+    font-size: .875em;
+    color: #666;
+}
+
+.overviewWidget ul li span {
+    display: block;
+    font-size: 1.2em;
+    color: #000;
+}
+
 .summaryWidget {
     border: 1px solid #c0c0c0;
-    font-size: .875em;
     padding: .5em;
     float: left;
     margin-right: 1em;
@@ -98,11 +120,7 @@ p { margin-bottom: 1em; }
     display: inline-block;
 }
 
-.summaryWidget .chartContainer {
-    margin-bottom: 1em;
-}
-
 .summaryWidget .textContainer {
-    margin: 1em;
+    margin: .5em;
     font-size: .875em;
 }
