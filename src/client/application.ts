@@ -34,12 +34,18 @@ class Application implements IApplication {
         console.log(`Item selected: ${path}`);
         switch (path){
             case "/overview":
+                this.loadConfiView();
                 this.loadSummaryView();
                 break;
             case "/instances":
                 this.loadInstanceView();
                 break;
         }
+    }
+
+    private async loadConfiView(){
+        const config = await this.api.LoadConfigurationData();
+        this.ui.ShowConfigurationData(config);
     }
 
     private async loadSummaryView(){

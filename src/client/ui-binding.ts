@@ -4,12 +4,13 @@
 
 import * as $ from "jquery";
 import { IChart, LineChart } from "./charting";
-import { OverviewDetails } from "../common-types";
+import { OverviewDetails, ConfigurationDetails } from "../common-types";
 
 export interface IUiBinding
 {
     SetupInitialState(): void;
     SetNavigationChangedCallback(onNavigation: (path: string) => void): void;
+    ShowConfigurationData(data: ConfigurationDetails): void;
     ShowSummaryViewContent(data: OverviewDetails): void;
     ShowInstanceDetailContent(): void;
 }
@@ -42,6 +43,18 @@ export class UiBinding implements IUiBinding
 
         // Fire on initial run incase there is no hash-change event (i.e., bookmark)
         updateUiForPath();
+    }
+
+    public ShowConfigurationData(data: ConfigurationDetails) {
+        $("#config_tenant_id span").text(data.TenantId!);
+        $("#config_subscription_id span").text(data.SubscriptionId!);
+        $("#config_region span").text(data.Region!);
+        $("#config_resource_group span").text(data.ResourceGroup!);
+
+        $("#config_container_image span").text(data.ContainerImage!);
+        $("#config_container_port span").text(data.ContainerPort!);
+        $("#config_container_os span").text(data.ContainerOs!);
+        $("#config_report_interval span").text(data.ReportingRefreshInterval!);
     }
 
     public ShowSummaryViewContent(data: OverviewDetails){

@@ -2,8 +2,9 @@ import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import { ILogger, ConsoleLogger } from "./logging";
-import * as containerServices from "./container-services";
+import * as containerServices from "./container-service";
 import * as summaryServices from "./reporting-service";
+import { ConfigurationService } from "./config-service";
 
 // Init environment
 dotenv.config();
@@ -13,6 +14,7 @@ const logger: ILogger = new ConsoleLogger();
 const app: express.Application = express();
 const aci = new containerServices.ContainerServices(logger);
 const reporting = new summaryServices.SummaryServices(logger, aci);
+const config = new ConfigurationService();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
 // and JSON
@@ -52,6 +54,11 @@ app.get("/api/overviewSummary", async (req: express.Request, resp: express.Respo
     }).catch((reason) => {
         resp.status(500).json(reason);
     })
+});
+app.get("/api/configuration", async (req: express.Request, resp: express.Response) => {
+    logger.Write("Executing GET /api/configuration...");
+    setNoCache(resp);
+    resp.json(config.GetConfiguration());
 });
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/deployments...");

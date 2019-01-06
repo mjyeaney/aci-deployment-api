@@ -17,3 +17,14 @@ export class SequenceSummary {
     Maximum: number = 0;
     Average: number = 0;
 }
+
+export class ConfigurationDetails {
+    TenantId: string | undefined;
+    SubscriptionId: string | undefined;
+    Region: string | undefined;
+    ResourceGroup: string | undefined;
+    ContainerImage: string | undefined;
+    ContainerPort: number | undefined;
+    ContainerOs: string | undefined;
+    ReportingRefreshInterval: string | undefined;
+}
