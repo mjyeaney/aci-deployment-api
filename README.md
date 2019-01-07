@@ -1,6 +1,11 @@
 ## ACI Deployment API
 
-This project presents an API shim to deploy configured Azure Container Instances on the fly, and give a preliminary dashboard to monitoring status of the deployed / running images. 
+This project presents an API shim to deploy pre-configured Azure Container Instances on the fly, and give a preliminary dashboard to monitoring status of the deployed / running images. 
+
+### What problems does this solve?
+
+The target use case for this sample application is client applications (i.e., mobile, web, desktop) that should not / do not have enough priviledges to directly call the Azure management API's needed for deploying new resources (such as ACI instances). The application leverages a service principal that has the required isloated priviledges without needed to give extended permissions to end user/client applications.
+
 ### API Methods
 
 The following API methods are exposed from this application:
@@ -8,7 +13,8 @@ The following API methods are exposed from this application:
 * `GET /api/deployments`
     * This lists all active deployments, and currently returns the same JSON format that the Azure REST api does.
 * `POST /api/deployments`
-    * This requires a body payload describing the number of CPU's and memory that are requested, such as `{numCpu:2, memoryInGB: 2}`.
+    * This requires a body payload describing the number of CPU's and memory that are requested:
+        * For example: `{numCpu:2, memoryInGB: 2}`.
     * Note this is a synchronous / blocking call - implementing the job/polling mechanism correctly was going to add more work that was necessary for this PoC.
 * `GET /api/deployments/{deployment-name}`
     * This will return details about the specific deployment.

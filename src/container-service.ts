@@ -195,6 +195,9 @@ export class ContainerServices implements IContainerServices {
             return this.GetDeployment(group.name!);
         }));
 
+        // BUG: Note this finds the first, unused matching deployment...and so will every other request on this 
+        // and other nodes. This leads to a race, with multiple, overlapping requests trying to re-use the same 
+        // deployment (which works but causes silent failures as only a single node is started).
         const matched = groupStatus.some((details) => {
             if ((details.instanceView!.state === "Stopped") &&
                 (details.containers[0].image === this.CONTAINER_IMAGE_NAME) &&
