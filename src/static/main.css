@@ -133,14 +133,13 @@ p { margin-bottom: 1em; }
 
 .tableWidget table {
     border-collapse: collapse;
-    border: 1px solid #e6e6e6;
     table-layout: fixed;
     width: 100%;
 }
 
 .tableWidget table th, .tableWidget table td {
-    border: 1px solid #e6e6e6;
-    padding: .35em;
+    border-bottom: 1px solid #e6e6e6;
+    padding: .5em;
     text-align: left;
     white-space: nowrap;
     overflow: hidden;

@@ -9,8 +9,7 @@ export class DeploymentsGrid {
         <table>
             <colgroup>
                 <col width="30%" />
-                <col width="30%" />
-                <col width="100px" />
+                <col width="*" />
                 <col width="100px" />
                 <col width="100px" />
             </colgroup>
@@ -18,8 +17,7 @@ export class DeploymentsGrid {
                 <th>Container Group Name</th>
                 <th>IP Address</th>
                 <th>CPU Count</th>
-                <th>Memory in GB</th>
-                <th>Status</th>
+                <th>Memory (GB)</th>
             </tr>
             ${this.renderGridRows(data)}
         </table>
@@ -31,10 +29,9 @@ export class DeploymentsGrid {
             return `
             <tr>
                 <td>${item.Name}</td>
-                <td>${item.IpAddress}</td>
+                <td>${item.IpAddress ? item.IpAddress : "Unassigned"}</td>
                 <td>${item.CpuCount}</td>
                 <td>${item.MemoryInGB}</td>
-                <td>${item.Status}</td>
             </tr>
             `;
         });

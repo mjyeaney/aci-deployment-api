@@ -11,9 +11,11 @@ export interface IUiBinding
 {
     SetupInitialState(): void;
     SetNavigationChangedCallback(onNavigation: (path: string) => void): void;
+    ShowOverviewContent(): void;
     ShowConfigurationData(data: ConfigurationDetails): void;
-    ShowSummaryViewContent(data: OverviewDetails): void;
-    ShowInstanceDetailContent(data: ContainerGroupGridRow[]): void;
+    ShowSummaryViewData(data: OverviewDetails): void;
+    ShowInstanceDetailContent(): void;
+    ShowInstanceDetailData(data: ContainerGroupGridRow[]): void;
 }
 
 export class UiBinding implements IUiBinding
@@ -46,6 +48,11 @@ export class UiBinding implements IUiBinding
         updateUiForPath();
     }
 
+    public ShowOverviewContent() {
+        $(".content").hide();
+        $("#overviewContent").show();
+    }
+
     public ShowConfigurationData(data: ConfigurationDetails) {
         $("#config_tenant_id span").text(data.TenantId!);
         $("#config_subscription_id span").text(data.SubscriptionId!);
@@ -58,9 +65,7 @@ export class UiBinding implements IUiBinding
         $("#config_report_interval span").text(data.ReportingRefreshInterval!);
     }
 
-    public ShowSummaryViewContent(data: OverviewDetails){
-        $(".content").hide();
-        $("#overviewContent").show();
+    public ShowSummaryViewData(data: OverviewDetails){
         $("#runningInstanceChart").html(this.lineChartGenerator.Render(data.RunningInstanceCounts));
         $("#stoppedInstanceChart").html(this.lineChartGenerator.Render(data.StoppedInstanceCounts));
 
@@ -75,10 +80,12 @@ export class UiBinding implements IUiBinding
         $("#stopped-max").text(data.StoppedSummary.Maximum);
     }
 
-    public ShowInstanceDetailContent(data: ContainerGroupGridRow[]){
+    public ShowInstanceDetailContent(){
         $(".content").hide();
         $("#instanceDetails").show();
+    }
 
+    public ShowInstanceDetailData(data: ContainerGroupGridRow[]){
         const grid = new DeploymentsGrid();
         $("#deploymentsGrid").html(grid.Render(data));
     }

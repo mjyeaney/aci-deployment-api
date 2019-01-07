@@ -34,7 +34,7 @@ class Application implements IApplication {
         console.log(`Item selected: ${path}`);
         switch (path){
             case "/overview":
-                this.loadConfiView();
+                this.loadConfigView();
                 this.loadSummaryView();
                 break;
             case "/deployments":
@@ -43,27 +43,31 @@ class Application implements IApplication {
         }
     }
 
-    private async loadConfiView(){
+    private async loadConfigView(){
         const config = await this.api.LoadConfigurationData();
         this.ui.ShowConfigurationData(config);
     }
 
     private async loadSummaryView(){
+        this.ui.ShowOverviewContent();
+
         const data = await this.api.LoadSummaryData();
-        this.ui.ShowSummaryViewContent(data);
+        this.ui.ShowSummaryViewData(data);
 
         this.clearRefreshTimers();
 
         this.hTimer = setInterval(async () => {
             const data = await this.api.LoadSummaryData();
-            this.ui.ShowSummaryViewContent(data);
+            this.ui.ShowSummaryViewData(data);
         }, 1000 * 60);
     }
 
     private async loadInstanceView(){
         this.clearRefreshTimers();
+        this.ui.ShowInstanceDetailContent();
+
         const data = await this.api.LoadInstancesData();
-        this.ui.ShowInstanceDetailContent(data);
+        this.ui.ShowInstanceDetailData(data);
     }
 
     private clearRefreshTimers(){
