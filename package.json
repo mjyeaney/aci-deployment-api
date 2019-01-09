@@ -10,7 +10,7 @@
     "setup-data": "cp -r ./src/data ./dist",
     "copy-assets": "rm -rf ./dist/static && cp -r ./src/static ./dist",
     "bump-asset-vers": "cat ./dist/static/index.html | sed -e 's/?ver=TIMESTAMP/?ver='\"$(date +%s)\"'/' > ./dist/static/index.html",
-    "launch": "node ./dist/server.js"
+    "start": "node ./dist/server.js"
   },
   "author": "Mike Yeaney",
   "license": "MIT",

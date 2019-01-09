@@ -9,6 +9,7 @@ import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
 import { ILogger, IContainerService, GroupMatchInformation } from "./common-types";
+import { IPendingDeploymentCache } from "./pending-deployment-cache";
 
 export class ContainerService implements IContainerService {
     private readonly TENANT_ID = process.env.TENANT_ID || "";
@@ -25,11 +26,13 @@ export class ContainerService implements IContainerService {
     private readonly CONTAINER_REGISTRY_PASSWORD = process.env.CONTAINER_REGISTRY_PASSWORD || "";
 
     private readonly logger: ILogger;
+    private readonly pendingCache: IPendingDeploymentCache;
     private aciClient: ContainerInstanceManagementClient | undefined;
     private armClient: ResourceManagementClient.default | undefined;
 
-    constructor(logger: ILogger) {
+    constructor(logger: ILogger, pendingCache: IPendingDeploymentCache) {
         this.logger = logger;
+        this.pendingCache = pendingCache;
     }
 
     public async GetDeployments() {
@@ -144,6 +147,7 @@ export class ContainerService implements IContainerService {
                 return matchInfo.Group;
             })
             .then((result: ContainerGroup) => {
+                this.pendingCache.RemoveDeploymentName(result.name!);
                 resolve(result);
             })
             .catch((err: any) => {
@@ -164,7 +168,6 @@ export class ContainerService implements IContainerService {
         // May be a better strategy to introduce partitioning scheme to limit traversal
         const matchInfo = new GroupMatchInformation();
         const groups = await this.GetDeployments();
-
         const groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
             return this.GetDeployment(group.name!);
         }));
@@ -181,14 +184,16 @@ export class ContainerService implements IContainerService {
         // are "claimed" but not yet started.
         //
         this.logger.Write(`Starting critical section...`);
-        lockfile.lockSync("./dist/data/sync.lock", { retries: 5});
+        await lockfile.lock("./dist/data/sync.lock", { retries: 5});
 
         try {
+            const pendingDeployments = await this.pendingCache.GetCurrentDeploymentNames();
             const matched = groupStatus.some((details) => {
                 if ((details.instanceView!.state === "Stopped") &&
                     (details.containers[0].image === this.CONTAINER_IMAGE_NAME) &&
                     (details.containers[0].resources.requests.cpu === numCpu) &&
-                    (details.containers[0].resources.requests.memoryInGB === memoryInGB)) {
+                    (details.containers[0].resources.requests.memoryInGB === memoryInGB) &&
+                    (pendingDeployments.indexOf(details.name!) === -1)) {
                     matchInfo.Name = details.name!;
                     matchInfo.Group = details;
                     return true;
@@ -196,14 +201,16 @@ export class ContainerService implements IContainerService {
                 return false;
             });
 
+            // No matches found - create a new deployment name
             if (!matched) {
                 const uniq = uuid().substr(-12);
                 matchInfo.Name = `aci-inst-${uniq}`;
-            } else {
-                // TOOO: Track the matched instances as "off limits", so the next caller 
-                // that enters this critical section won't also select the same match
-                // (as it's potentially not yet started).
             }
+
+            // Tack the matched instances as "off limits", so the next caller 
+            // that enters this critical section won't also select the same match
+            // (as it's potentially not yet started).
+            await this.pendingCache.AddPendingDeploymentName(matchInfo.Name);
         }
         finally {
             this.logger.Write(`Critical section finished - releasing mutex...`);

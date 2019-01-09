@@ -1,11 +1,13 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger } from "./common-types";
+import { ILogger, GroupMatchInformation } from "./common-types";
 import { ConsoleLogger } from "./logging";
 import { ContainerService }  from "./container-service";
 import { ReportingService }  from "./reporting-service";
 import { ConfigurationService } from "./config-service";
+import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { PendingDeploymentCache } from "./pending-deployment-cache";
 
 // Init environment
 dotenv.config();
@@ -13,7 +15,8 @@ dotenv.config();
 // Setup services
 const logger: ILogger = new ConsoleLogger();
 const app: express.Application = express();
-const aci = new ContainerService(logger);
+const pendingCache = new PendingDeploymentCache(logger);
+const aci = new ContainerService(logger, pendingCache);
 const reporting = new ReportingService(logger, aci);
 const config = new ConfigurationService();
 
@@ -37,9 +40,17 @@ const setNoCache = function(res: express.Response){
 //
 app.post("/api/test/getGroupInfo", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
-    aci.GetMatchingGroupInfo(req.body.numCpu, req.body.memoryInGB).then((data) => {
+    aci.GetMatchingGroupInfo(req.body.numCpu, req.body.memoryInGB).then((data: GroupMatchInformation) => {
         resp.json(data);
-    }).catch((reason) => {
+    }).catch((reason: any) => {
+        resp.status(500).json(reason);
+    });
+});
+app.get("/api/test/getPendingDeployments", async (req: express.Request, resp: express.Response) => {
+    setNoCache(resp);
+    pendingCache.GetCurrentDeploymentNames().then((names: string[]) => {
+        resp.json(names);
+    }).catch((reason: any) => {
         resp.status(500).json(reason);
     });
 });
@@ -64,9 +75,9 @@ app.get("/api/configuration", async (req: express.Request, resp: express.Respons
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/deployments...");
     setNoCache(resp);
-    aci.GetDeployments().then((data) => {
+    aci.GetDeployments().then((data: ContainerGroupListResult) => {
         resp.json(data);
-    }).catch((reason) => {
+    }).catch((reason: any) => {
         resp.status(500).json(reason);
     });
 });
@@ -78,9 +89,9 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
         logger.Write("Invalid request to /api/deployments");
         resp.status(400).end();
     } else {
-        aci.CreateNewDeployment(req.body.numCpu, req.body.memoryInGB).then((data) => {
+        aci.CreateNewDeployment(req.body.numCpu, req.body.memoryInGB).then((data: ContainerGroup) => {
             resp.json(data);
-        }).catch((reason) => {
+        }).catch((reason: any) => {
             resp.status(500).json(reason);
         });
     }
@@ -88,9 +99,9 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing GET /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
-    aci.GetDeployment(req.params.deploymentId).then((data) => {
+    aci.GetDeployment(req.params.deploymentId).then((data: ContainerGroup) => {
         resp.json(data);
-    }).catch((reason) => {
+    }).catch((reason: any) => {
         resp.status(500).json(reason);
     });
 });
@@ -99,7 +110,7 @@ app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, res
     setNoCache(resp);
     aci.StopDeployment(req.params.deploymentId).then(() => {
         resp.status(200).end();
-    }).catch((reason) => {
+    }).catch((reason: any) => {
         resp.status(500).json(reason);
     });
 });
@@ -108,7 +119,7 @@ app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: 
     setNoCache(resp);
     aci.DeleteDeployment(req.params.deploymentId).then(() => {
         resp.status(200).end();
-    }).catch((reason) => {
+    }).catch((reason: any) => {
         resp.status(500).json(reason);
     });
 });
