@@ -8,18 +8,20 @@ import * as msrest from "ms-rest-azure";
 import { ILogger } from "./logging";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
+import * as lockfile from "proper-lockfile";
 
 export interface IContainerServices {
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
+    StopDeployment(containerGroupName: string): Promise<void>;
     DeleteDeployment(containerGroupName: string): Promise<void>;
     GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
 }
 
 class GroupMatchInformation {
-    GroupName: string = "";
+    Name: string = "";
     Group: ContainerGroup | undefined = undefined;
 }
 
@@ -116,6 +118,27 @@ export class ContainerServices implements IContainerServices {
         });
     }
 
+    public async StopDeployment(containerGroupName: string) {
+        return new Promise<void>((resolve, reject) => {
+            const start = Date.now();
+            this.initializeAciClient()
+            .then(() => {
+                return this.aciClient!.containerGroups.stop(this.RESOURCE_GROUP_NAME,
+                    containerGroupName);
+            })
+            .then(() => {
+                resolve();
+            })
+            .catch((reason: any) => {
+                reject(reason);
+            })
+            .finally(() => {
+                const duration = Date.now() - start;
+                this.logger.Write(`::StopDeployment duration: ${duration} ms`);
+            })
+        })
+    }
+
     public async CreateNewDeployment(numCpu: number, memoryInGB: number) {
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
@@ -123,64 +146,30 @@ export class ContainerServices implements IContainerServices {
             .then(() => {
                 return this.GetMatchingGroupInfo(numCpu, memoryInGB);
             })
-            .then((matchInfo: GroupMatchInformation) => {
+            .then(async (matchInfo: GroupMatchInformation) => {
                 if (!matchInfo.Group) {
-                    // Create a container group - there was no match
                     this.logger.Write("Starting new container group deployment (no match found)...");
-                    this.aciClient!.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, matchInfo.GroupName, {
-                        containers: [{
-                            name: "default-container",
-                            image: this.CONTAINER_IMAGE_NAME,
-                            ports: [{
-                                port: this.CONTAINER_PORT
-                            }],
-                            resources: {
-                                requests: {
-                                    memoryInGB: memoryInGB,
-                                    cpu: numCpu
-                                }
-                            }
-                        }],
-                        imageRegistryCredentials: this.getImageRegistryCredentials(),
-                        location: this.REGION,
-                        osType: this.CONTAINER_OS_TYPE,
-                        ipAddress: {
-                            ports: [{ port: this.CONTAINER_PORT }],
-                            type: "public",
-                            dnsNameLabel: matchInfo.GroupName
-                        },
-                        restartPolicy: "Never"
-                    })
-                    .then((group) => {
-                        resolve(group);
-                    })
-                    .catch((err) => {
-                        this.logger.Write("*****Error in ::CreateNewDeployment*****");
-                        this.logger.Write(JSON.stringify(err));
-                        reject(err);
-                    })
-                    .finally(() => {
-                        const end: number = Date.now();
-                        const duration = end - start;
-                        this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
-                    });
+                    matchInfo.Group = await this.aciClient!.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, 
+                        matchInfo.Name, 
+                        this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name));
                 } else {
                     this.logger.Write("Starting existing container group (match found)...");
-                    this.aciClient!.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.GroupName)
-                    .then(() => {
-                        resolve(matchInfo.Group);
-                    })
-                    .catch((err) => {
-                        this.logger.Write("*****Error in ::CreateNewDeployment*****");
-                        this.logger.Write(JSON.stringify(err));
-                        reject(err);
-                    })
-                    .finally(() => {
-                        const end: number = Date.now();
-                        const duration = end - start;
-                        this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
-                    });
+                    await this.aciClient!.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.Name);
                 }
+                return matchInfo.Group;
+            })
+            .then((result: ContainerGroup) => {
+                resolve(result);
+            })
+            .catch((err: any) => {
+                this.logger.Write("*****Error in ::CreateNewDeployment*****");
+                this.logger.Write(JSON.stringify(err));
+                reject(err);
+            })
+            .finally(() => {
+                const end: number = Date.now();
+                const duration = end - start;
+                this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
             });
         });
     }
@@ -195,25 +184,55 @@ export class ContainerServices implements IContainerServices {
             return this.GetDeployment(group.name!);
         }));
 
-        // BUG: Note this finds the first, unused matching deployment...and so will every other request on this 
+        ////////////////////////////////////////////////////////////////////////////////////
+        //
+        // BEGIN CRITICAL SECTION
+        //
+        // Note this finds the first, unused matching deployment...and so will every other request on this 
         // and other nodes. This leads to a race, with multiple, overlapping requests trying to re-use the same 
         // deployment (which works but causes silent failures as only a single node is started).
-        const matched = groupStatus.some((details) => {
-            if ((details.instanceView!.state === "Stopped") &&
-                (details.containers[0].image === this.CONTAINER_IMAGE_NAME) &&
-                (details.containers[0].resources.requests.cpu === numCpu) &&
-                (details.containers[0].resources.requests.memoryInGB === memoryInGB)) {
-                matchInfo.GroupName = details.name!;
-                matchInfo.Group = details;
-                return true;
-            }
-            return false;
-        });
+        //
+        // To combat this, we're applying a critical section around this code and tracking which instances 
+        // are "claimed" but not yet started.
+        //
+        lockfile.lock("./dist/data/sync.lock", { retries: 5})
+        .then(() => {
+            try {
+                const matched = groupStatus.some((details) => {
+                    if ((details.instanceView!.state === "Stopped") &&
+                        (details.containers[0].image === this.CONTAINER_IMAGE_NAME) &&
+                        (details.containers[0].resources.requests.cpu === numCpu) &&
+                        (details.containers[0].resources.requests.memoryInGB === memoryInGB)) {
+                        matchInfo.Name = details.name!;
+                        matchInfo.Group = details;
+                        return true;
+                    }
+                    return false;
+                });
 
-        if (!matched) {
-            const uniq = uuid().substr(-12);
-            matchInfo.GroupName = `aci-inst-${uniq}`;
-        }
+                if (!matched) {
+                    const uniq = uuid().substr(-12);
+                    matchInfo.Name = `aci-inst-${uniq}`;
+                } else {
+                    // TOOO: Track the matched instances as "off limits", so the next caller 
+                    // that enters this critical section won't also select the same match
+                    // (as it's potentially not yet started).
+                }
+            }
+            finally {
+                this.logger.Write(`Critical section finished - releasing mutex...`);
+            }
+        })
+        .catch((reason: any) => {
+            this.logger.Write(`Error during critical section!!!! ${JSON.stringify(reason)}`);
+        })
+        .finally(() => {
+            lockfile.unlockSync("./dist/data/sync.lock");
+        });
+        //
+        // END CRITICAL SECTION
+        //
+        ////////////////////////////////////////////////////////////////////////////////////
 
         return matchInfo;
     }
@@ -226,6 +245,33 @@ export class ContainerServices implements IContainerServices {
             return this.GetDeployment(group.name!);
         }));
         return groupStatus;
+    }
+
+    private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string) {
+        return {
+            containers: [{
+                name: "default-container",
+                image: this.CONTAINER_IMAGE_NAME,
+                ports: [{
+                    port: this.CONTAINER_PORT
+                }],
+                resources: {
+                    requests: {
+                        memoryInGB: memoryInGB,
+                        cpu: numCpu
+                    }
+                }
+            }],
+            imageRegistryCredentials: this.getImageRegistryCredentials(),
+            location: this.REGION,
+            osType: this.CONTAINER_OS_TYPE,
+            ipAddress: {
+                ports: [{ port: this.CONTAINER_PORT }],
+                type: "public",
+                dnsNameLabel: groupName
+            },
+            restartPolicy: "Never"
+        };
     }
 
     private getImageRegistryCredentials(): ImageRegistryCredential[] | undefined {
