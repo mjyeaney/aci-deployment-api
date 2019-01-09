@@ -8,9 +8,9 @@ import * as msrest from "ms-rest-azure";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-import { ILogger, IContainerServices, GroupMatchInformation } from "./common-types";
+import { ILogger, IContainerService, GroupMatchInformation } from "./common-types";
 
-export class ContainerServices implements IContainerServices {
+export class ContainerService implements IContainerService {
     private readonly TENANT_ID = process.env.TENANT_ID || "";
     private readonly CLIENT_ID = process.env.CLIENT_ID || "";
     private readonly CLIENT_SECRET = process.env.CLIENT_SECRET || "";
@@ -181,7 +181,7 @@ export class ContainerServices implements IContainerServices {
         // are "claimed" but not yet started.
         //
         this.logger.Write(`Starting critical section...`);
-        await lockfile.lock("./dist/data/sync.lock", { retries: 5})
+        lockfile.lockSync("./dist/data/sync.lock", { retries: 5});
 
         try {
             const matched = groupStatus.some((details) => {

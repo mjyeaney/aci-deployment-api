@@ -3,8 +3,8 @@ import * as express from "express";
 import * as bodyParser from "body-parser";
 import { ILogger } from "./common-types";
 import { ConsoleLogger } from "./logging";
-import { ContainerServices }  from "./container-service";
-import { SummaryServices }  from "./reporting-service";
+import { ContainerService }  from "./container-service";
+import { ReportingService }  from "./reporting-service";
 import { ConfigurationService } from "./config-service";
 
 // Init environment
@@ -13,8 +13,8 @@ dotenv.config();
 // Setup services
 const logger: ILogger = new ConsoleLogger();
 const app: express.Application = express();
-const aci = new ContainerServices(logger);
-const reporting = new SummaryServices(logger, aci);
+const aci = new ContainerService(logger);
+const reporting = new ReportingService(logger, aci);
 const config = new ConfigurationService();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type

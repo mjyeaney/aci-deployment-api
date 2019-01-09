@@ -10,7 +10,7 @@ export interface ILogger {
     Write(message: string): void;
 }
 
-export interface IContainerServices {
+export interface IContainerService {
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
@@ -25,7 +25,7 @@ export class GroupMatchInformation {
     Group: ContainerGroup | undefined = undefined;
 }
 
-export interface ISummaryServices {
+export interface IReportingService {
     GetOverviewDetails(): Promise<OverviewDetails>;
 }
 
