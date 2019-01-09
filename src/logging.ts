@@ -2,11 +2,7 @@
 // Basic logging implementions
 //
 
-export interface ILogger
-{
-    // Logs a message (async) to an underlying storage provider
-    Write(message: string): void;
-}
+import { ILogger } from "./common-types";
 
 export class ConsoleLogger implements ILogger
 {

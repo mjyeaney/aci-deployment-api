@@ -1,14 +1,8 @@
 //
 // Provides serivces for generating and reading overview summary status
 //
-import { IContainerServices, ContainerServices } from "./container-service";
-import { ILogger } from "./logging";
 import * as moment from "moment";
-import { OverviewDetails, SequenceSummary } from "./common-types";
-
-export interface ISummaryServices {
-    GetOverviewDetails(): Promise<OverviewDetails>;
-}
+import { OverviewDetails, SequenceSummary, IContainerServices, ILogger, ISummaryServices } from "./common-types";
 
 export class SummaryServices implements ISummaryServices {
     private readonly logger: ILogger;

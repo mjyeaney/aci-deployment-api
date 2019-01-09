@@ -5,25 +5,10 @@
 import { ContainerInstanceManagementClient } from "azure-arm-containerinstance";
 import { ResourceManagementClient } from "azure-arm-resource";
 import * as msrest from "ms-rest-azure";
-import { ILogger } from "./logging";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-
-export interface IContainerServices {
-    GetDeployments(): Promise<ContainerGroupListResult>;
-    GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
-    CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
-    StopDeployment(containerGroupName: string): Promise<void>;
-    DeleteDeployment(containerGroupName: string): Promise<void>;
-    GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation>;
-    GetFullConatinerDetails(): Promise<ContainerGroup[]>;
-}
-
-class GroupMatchInformation {
-    Name: string = "";
-    Group: ContainerGroup | undefined = undefined;
-}
+import { ILogger, IContainerServices, GroupMatchInformation } from "./common-types";
 
 export class ContainerServices implements IContainerServices {
     private readonly TENANT_ID = process.env.TENANT_ID || "";

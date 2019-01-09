@@ -1,12 +1,11 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, ConsoleLogger } from "./logging";
-import * as containerServices from "./container-service";
-import * as summaryServices from "./reporting-service";
+import { ILogger } from "./common-types";
+import { ConsoleLogger } from "./logging";
+import { ContainerServices }  from "./container-service";
+import { SummaryServices }  from "./reporting-service";
 import { ConfigurationService } from "./config-service";
-import { read } from "fs";
-import { DeploymentsGrid } from "./client/deployments-grid";
 
 // Init environment
 dotenv.config();
@@ -14,8 +13,8 @@ dotenv.config();
 // Setup services
 const logger: ILogger = new ConsoleLogger();
 const app: express.Application = express();
-const aci = new containerServices.ContainerServices(logger);
-const reporting = new summaryServices.SummaryServices(logger, aci);
+const aci = new ContainerServices(logger);
+const reporting = new SummaryServices(logger, aci);
 const config = new ConfigurationService();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
@@ -34,7 +33,7 @@ const setNoCache = function(res: express.Response){
 };
 
 // 
-// Testing API methods
+// Introspection API methods
 //
 app.post("/api/test/getGroupInfo", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
@@ -95,22 +94,15 @@ app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: exp
         resp.status(500).json(reason);
     });
 });
-app.post("/api/deployments/:deploymentId/status", async (req: express.Request, resp: express.Response) => {
-    logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/status...`);
+app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, resp: express.Response) => {
+    logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/stop...`);
     setNoCache(resp);
-    if ((!req.body) || (!req.body.status)) {
-        logger.Write(`Invalid request to /api/deployments/${req.params.deploymentId}...`);
-        resp.status(400).end();
-    } else {
-        if (req.body.status.stopped){
-            aci.StopDeployment(req.params.deploymentId).then(() => {
-                resp.status(200).end();
-            }).catch((reason) => {
-                resp.status(500).json(reason);
-            })
-        }
-    }
-})
+    aci.StopDeployment(req.params.deploymentId).then(() => {
+        resp.status(200).end();
+    }).catch((reason) => {
+        resp.status(500).json(reason);
+    });
+});
 app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing DELETE /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
@@ -125,7 +117,7 @@ app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: 
 // Enable basic static resource support
 //
 app.use(express.static(__dirname, {
-    index : "/static/index.html"
+    index : "/static/index.html",
 }));
 
 //

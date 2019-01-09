@@ -3,6 +3,32 @@
 // Mostly used for REST api contracts.
 //
 
+import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
+
+export interface ILogger {
+    // Logs a message (async) to an underlying storage provider
+    Write(message: string): void;
+}
+
+export interface IContainerServices {
+    GetDeployments(): Promise<ContainerGroupListResult>;
+    GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
+    CreateNewDeployment(numCpu: number, memoryInGB: number): Promise<ContainerGroup>;
+    StopDeployment(containerGroupName: string): Promise<void>;
+    DeleteDeployment(containerGroupName: string): Promise<void>;
+    GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation>;
+    GetFullConatinerDetails(): Promise<ContainerGroup[]>;
+}
+
+export class GroupMatchInformation {
+    Name: string = "";
+    Group: ContainerGroup | undefined = undefined;
+}
+
+export interface ISummaryServices {
+    GetOverviewDetails(): Promise<OverviewDetails>;
+}
+
 export class OverviewDetails {
     RunningInstances: number = 0;
     StoppedInstances: number = 0;
