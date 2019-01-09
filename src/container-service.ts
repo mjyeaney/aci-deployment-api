@@ -195,40 +195,36 @@ export class ContainerServices implements IContainerServices {
         // To combat this, we're applying a critical section around this code and tracking which instances 
         // are "claimed" but not yet started.
         //
-        lockfile.lock("./dist/data/sync.lock", { retries: 5})
-        .then(() => {
-            try {
-                const matched = groupStatus.some((details) => {
-                    if ((details.instanceView!.state === "Stopped") &&
-                        (details.containers[0].image === this.CONTAINER_IMAGE_NAME) &&
-                        (details.containers[0].resources.requests.cpu === numCpu) &&
-                        (details.containers[0].resources.requests.memoryInGB === memoryInGB)) {
-                        matchInfo.Name = details.name!;
-                        matchInfo.Group = details;
-                        return true;
-                    }
-                    return false;
-                });
+        this.logger.Write(`Starting critical section...`);
+        await lockfile.lock("./dist/data/sync.lock", { retries: 5})
 
-                if (!matched) {
-                    const uniq = uuid().substr(-12);
-                    matchInfo.Name = `aci-inst-${uniq}`;
-                } else {
-                    // TOOO: Track the matched instances as "off limits", so the next caller 
-                    // that enters this critical section won't also select the same match
-                    // (as it's potentially not yet started).
+        try {
+            const matched = groupStatus.some((details) => {
+                if ((details.instanceView!.state === "Stopped") &&
+                    (details.containers[0].image === this.CONTAINER_IMAGE_NAME) &&
+                    (details.containers[0].resources.requests.cpu === numCpu) &&
+                    (details.containers[0].resources.requests.memoryInGB === memoryInGB)) {
+                    matchInfo.Name = details.name!;
+                    matchInfo.Group = details;
+                    return true;
                 }
+                return false;
+            });
+
+            if (!matched) {
+                const uniq = uuid().substr(-12);
+                matchInfo.Name = `aci-inst-${uniq}`;
+            } else {
+                // TOOO: Track the matched instances as "off limits", so the next caller 
+                // that enters this critical section won't also select the same match
+                // (as it's potentially not yet started).
             }
-            finally {
-                this.logger.Write(`Critical section finished - releasing mutex...`);
-            }
-        })
-        .catch((reason: any) => {
-            this.logger.Write(`Error during critical section!!!! ${JSON.stringify(reason)}`);
-        })
-        .finally(() => {
+        }
+        finally {
+            this.logger.Write(`Critical section finished - releasing mutex...`);
             lockfile.unlockSync("./dist/data/sync.lock");
-        });
+        }
+        
         //
         // END CRITICAL SECTION
         //

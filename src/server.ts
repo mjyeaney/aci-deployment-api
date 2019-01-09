@@ -5,6 +5,8 @@ import { ILogger, ConsoleLogger } from "./logging";
 import * as containerServices from "./container-service";
 import * as summaryServices from "./reporting-service";
 import { ConfigurationService } from "./config-service";
+import { read } from "fs";
+import { DeploymentsGrid } from "./client/deployments-grid";
 
 // Init environment
 dotenv.config();
@@ -93,6 +95,22 @@ app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: exp
         resp.status(500).json(reason);
     });
 });
+app.post("/api/deployments/:deploymentId/status", async (req: express.Request, resp: express.Response) => {
+    logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/status...`);
+    setNoCache(resp);
+    if ((!req.body) || (!req.body.status)) {
+        logger.Write(`Invalid request to /api/deployments/${req.params.deploymentId}...`);
+        resp.status(400).end();
+    } else {
+        if (req.body.status.stopped){
+            aci.StopDeployment(req.params.deploymentId).then(() => {
+                resp.status(200).end();
+            }).catch((reason) => {
+                resp.status(500).json(reason);
+            })
+        }
+    }
+})
 app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing DELETE /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
