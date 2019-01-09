@@ -18,6 +18,7 @@ export class LineChart implements IChart {
     private readonly Y_AXIS_MAX: number = 270;
     private readonly Y_AXIS_LABELS_XPOS: number = 35;
     private readonly X_AXIS_LABLES_YPOS: number = 290;
+    private readonly Y_AXIS_DEFAULT_MAX_VALUE: number = 60;
 
     public Render(data: number[]) {
         const prologue = `<svg style="height: auto; width: 100%;" viewbox="0,0 ${this.WIDTH},${this.HEIGHT}">`;
@@ -67,7 +68,7 @@ export class LineChart implements IChart {
 
     private generateYaxisLabels() {
         // TODO: This needs based on the max of the data sequence (0..max), 
-        let sampleMax = 50;
+        let sampleMax = this.Y_AXIS_DEFAULT_MAX_VALUE;
         let stops = 3;
         let scaleFactor = sampleMax / stops;
 
@@ -83,7 +84,7 @@ export class LineChart implements IChart {
 
     private generateSequencePoints(data: number[]) {
         const scaledData: number[][] = [];
-        const yAxisScalingFactor = (this.Y_AXIS_MAX - this.Y_AXIS_MIN) / 50;
+        const yAxisScalingFactor = (this.Y_AXIS_MAX - this.Y_AXIS_MIN) / this.Y_AXIS_DEFAULT_MAX_VALUE;
         const xAxisScalingFactor = (this.X_AXIS_MAX - this.X_AXIS_MIN) / this.MAX_POINTS;
         const pointsSvg = [];
         const polyLinePoints = [];
