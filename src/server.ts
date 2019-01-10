@@ -38,7 +38,7 @@ const setNoCache = function(res: express.Response){
 // 
 // Introspection API methods
 //
-app.post("/api/test/getGroupInfo", async (req: express.Request, resp: express.Response) => {
+app.post("/api/test/getGroupMatchInfo", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
     aci.GetMatchingGroupInfo(req.body.numCpu, req.body.memoryInGB).then((data: GroupMatchInformation) => {
         resp.json(data);

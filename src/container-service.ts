@@ -146,8 +146,8 @@ export class ContainerService implements IContainerService {
                 }
                 return matchInfo.Group;
             })
-            .then((result: ContainerGroup) => {
-                this.pendingCache.RemoveDeploymentName(result.name!);
+            .then(async (result: ContainerGroup) => {
+                await this.pendingCache.RemoveDeploymentName(result.name!);
                 resolve(result);
             })
             .catch((err: any) => {
