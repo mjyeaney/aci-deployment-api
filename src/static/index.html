@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>ACI Deployments - Overview</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600"" rel="stylesheet"" type="text/css"" />
+        <link rel="stylesheet" href="/static/main.css?ver=TIMESTAMP" type="text/css" />
+    </head>
+    <body>
+        <div class="header">
+            <h1>ACI Deployments</h1>
+        </div>
+
+        <div class="nav">
+            <ul>
+                <li data-action-name="/overview"><a href="#/overview" title="Overview">Overview</a></li>
+                <li data-action-name="/deployments"><a href="#/deployments" title="Deployments">Deployments</a></li>
+            </ul>
+        </div>
+
+        <div class="content" id="overviewContent">
+            <h3>Configuration Details</h3>
+            
+            <div class="overviewWidget">
+                <ul>
+                    <li id="config_tenant_id">Tenant ID:<span>XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX</span></li>
+                    <li id="config_subscription_id">Subscription ID:<span>XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX</span></li>
+                    <li id="config_region">Region:<span>XXXX</span></li>
+                    <li id="config_resource_group">Resource Group:<span>XXXX</span></li>
+                </ul>
+            </div>
+
+            <div class="overviewWidget">
+                <ul>
+                    <li id="config_container_image">Container Image:<span>XXXXX</span></li>
+                    <li id="config_container_port">Container Port:<span>XXXX</span></li>
+                    <li id="config_container_os">Container OS:<span>XXXX</span></li>
+                    <li id="config_report_interval">Reporting Refresh Interval:<span>XXXX</span></li>
+                </ul>
+            </div>
+
+            <div class="clear"></div>
+            
+            <div class="summaryWidget number fLeft">
+                <div id="runningInstanceChart" class="chartContainer"></div>
+                <div class="textContainer">
+                    <p>Running Instances (last hour): <span id="runningInstanceCount">0</span></p>
+                    <ul>
+                        <li>
+                            <span class="numeric-label">Min:</span>
+                            <span class="numeric-data" id="running-min">0.0</span>
+                        </li>
+                        <li>
+                            <span class="numeric-label">Avg:</span>
+                            <span class="numeric-data" id="running-avg">0.0</span>
+                        </li>
+                        <li>
+                            <span class="numeric-label">Max:</span>
+                            <span class="numeric-data" id="running-max">0.0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="summaryWidget number fRight">
+                <div id="stoppedInstanceChart" class="chartContainer"></div>
+                <div class="textContainer">
+                    <p>Paused Instances (last hour): <span id="stoppedInstanceCount">0</span></p>
+                    <ul>
+                        <li>
+                            <span class="numeric-label">Min:</span>
+                            <span class="numeric-data" id="stopped-min">0.0</span>
+                        </li>
+                        <li>
+                            <span class="numeric-label">Avg:</span>
+                            <span class="numeric-data" id="stopped-avg">0.0</span>
+                        </li>
+                        <li>
+                            <span class="numeric-label">Max:</span>
+                            <span class="numeric-data" id="stopped-max">0.0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="content" id="instanceDetails">
+            <h3>Current Deployments - Details</h3>
+
+            <div class="tableWidget" id="deploymentsGrid"></div>
+        </div>
+    </body>
+
+    <script src="/client/bundle.js?ver=TIMESTAMP"></script>
+</html>

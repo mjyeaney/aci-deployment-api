@@ -1,0 +1,11 @@
+{
+    "include": ["./src/**/*"],
+    "compilerOptions": {
+        "outDir": "./dist",
+        "target": "esnext",
+        "module": "commonjs",
+        "lib": ["es2018", "dom"],
+        "strict": true,
+        "removeComments": true
+    }
+}
