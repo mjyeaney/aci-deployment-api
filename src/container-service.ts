@@ -212,6 +212,9 @@ export class ContainerService implements IContainerService {
             // (as it's potentially not yet started).
             await this.pendingCache.AddPendingDeploymentName(matchInfo.Name);
         }
+        catch (err){
+            this.logger.Write(`ERROR: Error during critical section: ${err}`);
+        }
         finally {
             this.logger.Write(`Critical section finished - releasing mutex...`);
             lockfile.unlockSync("./dist/data/sync.lock");
