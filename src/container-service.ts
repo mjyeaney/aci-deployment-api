@@ -166,14 +166,6 @@ export class ContainerService implements IContainerService {
     }
 
     public async GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation> {
-        // list all existing groups, and lookup the status of each (..this is O(n^2)..may have runtime issues)
-        // May be a better strategy to introduce partitioning scheme to limit traversal
-        const matchInfo = new GroupMatchInformation();
-        const groups = await this.GetDeployments();
-        const groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
-            return this.GetDeployment(group.name!);
-        }));
-
         ////////////////////////////////////////////////////////////////////////////////////
         //
         // BEGIN CRITICAL SECTION
@@ -185,10 +177,18 @@ export class ContainerService implements IContainerService {
         // To combat this, we're applying a critical section around this code and tracking which instances 
         // are "claimed" but not yet started.
         //
-        this.logger.Write(`Starting critical section...`);
+        const matchInfo = new GroupMatchInformation();
         await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
+        this.logger.Write(`Entered critical section...`);
 
         try {
+            // List all existing groups, and lookup the status of each (..this is O(n^2)..may have runtime issues)
+            // May be a better strategy to introduce partitioning scheme to limit traversal
+            const groups = await this.GetDeployments();
+            const groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
+                return this.GetDeployment(group.name!);
+            }));
+
             const pendingDeployments = await this.pendingCache.GetCurrentDeploymentNames();
             const matched = groupStatus.some((details) => {
                 if ((details.instanceView!.state === "Stopped") &&

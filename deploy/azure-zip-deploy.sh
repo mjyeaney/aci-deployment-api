@@ -20,7 +20,7 @@ echo "Done!"
 # Create the zip file and deploy
 echo -n "Creating ZIP deployment file..."
 cd ./dist
-zip -r ../deploy/deploy.zip .
+zip -q -r ../deploy/deploy.zip .
 cd ..
 echo "Done!"
 
