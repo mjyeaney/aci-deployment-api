@@ -25,7 +25,7 @@ export class ContainerService implements IContainerService {
     private readonly CONTAINER_REGISTRY_USERNAME = process.env.CONTAINER_REGISTRY_USERNAME || "";
     private readonly CONTAINER_REGISTRY_PASSWORD = process.env.CONTAINER_REGISTRY_PASSWORD || "";
 
-    private readonly SYNC_ROOT_FILE_PATH: string = "./data/sync.lock";
+    private readonly SYNC_ROOT_FILE_PATH: string = "./data/aci.lock";
 
     private readonly logger: ILogger;
     private readonly pendingCache: IPendingDeploymentCache;
