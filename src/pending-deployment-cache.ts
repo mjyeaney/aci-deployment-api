@@ -60,11 +60,11 @@ export class PendingDeploymentCache implements IPendingDeploymentCache {
     }
 
     private readSync(): string[] {
-    if (!io.existsSync(this.FILE_PATH)){
+        if (!io.existsSync(this.FILE_PATH)){
             return [];
         }
         
-        const readBuffer = io.readFileSync(this.FILE_PATH);
+        const readBuffer = io.readFileSync(this.FILE_PATH, { flag: "rs+" });
         return JSON.parse(readBuffer.toString());
     }
 }
