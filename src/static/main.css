@@ -103,12 +103,17 @@ p { margin-bottom: 1em; }
     width: 30em;
 }
 
+.summaryWidget.number p {
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: .875em;
+    border-left: 5px solid #0078d4;
+    padding-left: 0.5em;
+}
+
 .summaryWidget.number p span {
     display: block;
     font-size: 2em;
-    border-left: 5px solid #0078d4;
-    margin-top: .5em;
-    padding-left: .5em;
 }
 
 .summaryWidget.number ul {

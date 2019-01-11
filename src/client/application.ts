@@ -13,10 +13,13 @@ interface IApplication
 }
 
 class Application implements IApplication {
+    private readonly REFRESH_TIMER_INTERVAL_SEC: number = 30;
+    
     private ui: IUiBinding;
     private api: IServiceApi;
 
-    private hTimer: NodeJS.Timer | undefined;
+    private overviewTimer: NodeJS.Timer | undefined;
+    private instanceGridTimer: NodeJS.Timer | undefined;
 
     constructor(ui: IUiBinding, api: IServiceApi) {
         this.ui = ui;
@@ -49,17 +52,16 @@ class Application implements IApplication {
     }
 
     private async loadSummaryView(){
+        this.clearRefreshTimers();
         this.ui.ShowOverviewContent();
 
         const data = await this.api.LoadSummaryData();
         this.ui.ShowSummaryViewData(data);
 
-        this.clearRefreshTimers();
-
-        this.hTimer = setInterval(async () => {
+        this.overviewTimer = setInterval(async () => {
             const data = await this.api.LoadSummaryData();
             this.ui.ShowSummaryViewData(data);
-        }, 1000 * 60);
+        }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
     }
 
     private async loadInstanceView(){
@@ -68,11 +70,19 @@ class Application implements IApplication {
 
         const data = await this.api.LoadInstancesData();
         this.ui.ShowInstanceDetailData(data);
+
+        this.instanceGridTimer = setInterval(async () => {
+            const data = await this.api.LoadInstancesData();
+            this.ui.ShowInstanceDetailData(data);
+        }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
     }
 
     private clearRefreshTimers(){
-        if (this.hTimer) {
-            clearInterval(this.hTimer);
+        if (this.overviewTimer) {
+            clearInterval(this.overviewTimer);
+        }
+        if (this.instanceGridTimer) {
+            clearInterval(this.instanceGridTimer);
         }
     }
 }
