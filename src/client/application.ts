@@ -5,6 +5,7 @@
 import { IUiBinding, UiBinding } from "./ui-binding";
 import { IServiceApi, ServiceApi } from "./service-api";
 import { LineChart } from "./charting";
+import { ConsoleLogger } from "../logging";
 
 interface IApplication
 {
@@ -18,8 +19,8 @@ class Application implements IApplication {
     private ui: IUiBinding;
     private api: IServiceApi;
 
-    private overviewTimer: NodeJS.Timer | undefined;
-    private instanceGridTimer: NodeJS.Timer | undefined;
+    private overviewTimer!: NodeJS.Timer;
+    private instanceGridTimer!: NodeJS.Timer;
 
     constructor(ui: IUiBinding, api: IServiceApi) {
         this.ui = ui;
@@ -58,7 +59,9 @@ class Application implements IApplication {
         const data = await this.api.LoadSummaryData();
         this.ui.ShowSummaryViewData(data);
 
+        console.log("Setting up overview timer...");
         this.overviewTimer = setInterval(async () => {
+            console.log("Overview timer fired!!!");
             const data = await this.api.LoadSummaryData();
             this.ui.ShowSummaryViewData(data);
         }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
@@ -71,19 +74,18 @@ class Application implements IApplication {
         const data = await this.api.LoadInstancesData();
         this.ui.ShowInstanceDetailData(data);
 
+        console.log("Setting up grid timer...");
         this.instanceGridTimer = setInterval(async () => {
+            console.log("Grid timer fired!!!!");
             const data = await this.api.LoadInstancesData();
             this.ui.ShowInstanceDetailData(data);
         }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
     }
 
     private clearRefreshTimers(){
-        if (this.overviewTimer) {
-            clearInterval(this.overviewTimer);
-        }
-        if (this.instanceGridTimer) {
-            clearInterval(this.instanceGridTimer);
-        }
+        console.log("Clearing timers...");
+        clearInterval(this.overviewTimer);
+        clearInterval(this.instanceGridTimer);
     }
 }
 
