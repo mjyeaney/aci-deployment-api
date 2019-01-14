@@ -60,6 +60,7 @@ For local development, you may place a `.env` file in your root folder to set th
 * [Architecture Overview](docs/ArchitectureOverview.md)
 * [Reporting Overview](docs/ReportingOverview.md)
 * [Container Group Reuse](docs/ContainerGroupReuse.md)
+* [Container Group Naming](docs/ContainerGroupNaming.md)
 
 ### TODO
 
