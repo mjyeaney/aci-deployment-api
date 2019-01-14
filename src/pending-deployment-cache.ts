@@ -64,6 +64,7 @@ export class PendingDeploymentCache implements IPendingDeploymentCache {
             return [];
         }
         
+        // Note the "rs+" flag to ask the OS to skip local cache
         const readBuffer = io.readFileSync(this.FILE_PATH, { flag: "rs+" });
         return JSON.parse(readBuffer.toString());
     }
