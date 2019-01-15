@@ -14,6 +14,9 @@ export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
         imageName: string,
         pendingDeployments: string[]): boolean {
 
+        // Current business logic requires same image, same CPU count, and same memory.
+        // The, only the status of "Stopped" (managmenet API peration) or 
+        // "terminated" (container exit) are considered.
         if ((instance.containers[0].image === imageName) &&
             (instance.containers[0].resources.requests.cpu === numCpu) &&
             (instance.containers[0].resources.requests.memoryInGB === memoryInGB) &&
@@ -31,6 +34,7 @@ export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
             }
         }
 
+        // Default case - no match found
         return false;
     }
 }

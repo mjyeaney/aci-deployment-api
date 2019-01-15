@@ -139,6 +139,11 @@ export class ContainerService implements IContainerService {
                 return this.GetMatchingGroupInfo(numCpu, memoryInGB);
             })
             .then(async (matchInfo: GroupMatchInformation) => {
+                //
+                // Two cases here: One, if no match was found, we need to kick off a new deployment.
+                // Second, if a match was found, we are either starting or re-starting, depending on 
+                // how the instance exited.
+                //
                 if (!matchInfo.Group) {
                     this.logger.Write("Starting new container group deployment (no match found)...");
                     matchInfo.Group = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.RESOURCE_GROUP_NAME, 
@@ -178,7 +183,7 @@ export class ContainerService implements IContainerService {
         // BEGIN CRITICAL SECTION
         //
         // Note this finds the first, unused matching deployment...and so will every other request on this 
-        // and other nodes. This leads to a race, with multiple, overlapping requests trying to re-use the same 
+        // (and other() nodes. This leads to a race, with multiple, overlapping requests trying to re-use the same 
         // deployment (which works but causes silent failures as only a single node is started).
         //
         // To combat this, we're applying a critical section around this code and tracking which instances 
