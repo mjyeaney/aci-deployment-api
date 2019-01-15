@@ -27,11 +27,11 @@ export interface IGroupMatchingStrategy {
      * Tests the specified instance to see if it matches the required params. If true, the ContainerGroup 
      * can be re-used.
      */
-    IsMatch(instance: ContainerGroup, 
-            numCpu: number, 
-            memoryInGB: number, 
-            imageName: string,
-            pendingDeployments: string[]): boolean;
+    IsMatch(instance: ContainerGroup,
+        numCpu: number,
+        memoryInGB: number,
+        imageName: string,
+        pendingDeployments: string[]): boolean;
 }
 
 export class GroupMatchInformation {
