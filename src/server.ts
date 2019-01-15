@@ -8,6 +8,7 @@ import { ReportingService }  from "./reporting-service";
 import { ConfigurationService } from "./config-service";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import { PendingDeploymentCache } from "./pending-deployment-cache";
+import { DefaultMatchingStrategy } from "./default-matching-strategy";
 
 // Init environment
 dotenv.config();
@@ -16,7 +17,8 @@ dotenv.config();
 const logger: ILogger = new ConsoleLogger();
 const app: express.Application = express();
 const pendingCache = new PendingDeploymentCache(logger);
-const aci = new ContainerService(logger, pendingCache);
+const matchStrategy = new DefaultMatchingStrategy();
+const aci = new ContainerService(logger, matchStrategy, pendingCache);
 const reporting = new ReportingService(logger, aci);
 const config = new ConfigurationService();
 
@@ -26,10 +28,11 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 // Check for the PORT env var from the azure host
+// Why strings here? Note tha the environment variable *may* be a named pipe
+// definition, which will be defined as a string. 
 const port: string | number = process.env.PORT || "8009";
-
 logger.Write(`Environment process.env.PORT = ${process.env.PORT}`);
-logger.Write(`Environment configured with port = ${port}`);
+logger.Write(`Environment configured with port = ${port}`); 
 
 //
 // Helper fn to set no-cache headers for API methods
@@ -138,7 +141,5 @@ app.use(express.static(__dirname, {
 // Init server listener loop
 //
 const server = app.listen(port, function () {
-    var host = server.address().address;
-    var port = server.address().port;
-    logger.Write(`Server now listening at http://${host}:${port}`);
+    logger.Write(`Server started - ready for requests`);
 });

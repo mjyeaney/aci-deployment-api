@@ -6,7 +6,9 @@
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
 export interface ILogger {
-    // Logs a message (async) to an underlying storage provider
+    /**
+     * Writes the provided message to the underlying log stream provider.
+     */
     Write(message: string): void;
 }
 
@@ -20,9 +22,22 @@ export interface IContainerService {
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
 }
 
+export interface IGroupMatchingStrategy {
+    /**
+     * Tests the specified instance to see if it matches the required params. If true, the ContainerGroup 
+     * can be re-used.
+     */
+    IsMatch(instance: ContainerGroup, 
+            numCpu: number, 
+            memoryInGB: number, 
+            imageName: string,
+            pendingDeployments: string[]): boolean;
+}
+
 export class GroupMatchInformation {
     Name: string = "";
     Group: ContainerGroup | undefined = undefined;
+    WasTerminated: boolean = false;
 }
 
 export interface IReportingService {
