@@ -131,7 +131,7 @@ export class ContainerService implements IContainerService {
         })
     }
 
-    public async CreateNewDeployment(numCpu: number, memoryInGB: number) {
+    public async CreateNewDeployment(numCpu: number, memoryInGB: number, tag: string | undefined) {
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
             this.initializeAciClient()
@@ -148,7 +148,7 @@ export class ContainerService implements IContainerService {
                     this.logger.Write("Starting new container group deployment (no match found)...");
                     matchInfo.Group = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.RESOURCE_GROUP_NAME, 
                         matchInfo.Name, 
-                        this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name));
+                        this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name, tag));
                 } else {
                     this.logger.Write("Starting existing container group (match found)...");
                     if (matchInfo.WasTerminated){
@@ -263,11 +263,15 @@ export class ContainerService implements IContainerService {
         return groupStatus;
     }
 
-    private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string) {
+    private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, tag: string | undefined) {
+        let imageName = this.CONTAINER_IMAGE_NAME;
+        if (tag) {
+            imageName = imageName + `:${tag}`;
+        }
         return {
             containers: [{
                 name: "default-container",
-                image: this.CONTAINER_IMAGE_NAME,
+                image: imageName,
                 ports: [{
                     port: this.CONTAINER_PORT
                 }],

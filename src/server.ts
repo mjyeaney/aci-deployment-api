@@ -95,7 +95,11 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
         logger.Write("Invalid request to /api/deployments");
         resp.status(400).end();
     } else {
-        aci.CreateNewDeployment(req.body.numCpu, req.body.memoryInGB).then((data: ContainerGroup) => {
+        // Note that 'tag' is optional
+        let tag = req.body.tag;
+        let numCpu = req.body.numCpu;
+        let memory = req.body.memoryInGB;
+        aci.CreateNewDeployment(numCpu, memory, tag).then((data: ContainerGroup) => {
             resp.json(data);
         }).catch((reason: any) => {
             resp.status(500).json(reason);
