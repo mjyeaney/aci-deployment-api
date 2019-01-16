@@ -46,6 +46,7 @@ const setNoCache = function(res: express.Response){
 //
 app.post("/api/test/getGroupMatchInfo", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
+
     aci.GetMatchingGroupInfo(req.body.numCpu, req.body.memoryInGB).then((data: GroupMatchInformation) => {
         resp.json(data);
     }).catch((reason: any) => {
@@ -54,6 +55,7 @@ app.post("/api/test/getGroupMatchInfo", async (req: express.Request, resp: expre
 });
 app.get("/api/test/getPendingDeployments", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
+    
     pendingCache.GetCurrentDeploymentNames().then((names: string[]) => {
         resp.json(names);
     }).catch((reason: any) => {
@@ -67,6 +69,7 @@ app.get("/api/test/getPendingDeployments", async (req: express.Request, resp: ex
 app.get("/api/overviewSummary", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/overviewSummary...");
     setNoCache(resp);
+
     reporting.GetOverviewDetails().then((data) => {
         resp.json(data);
     }).catch((reason) => {
@@ -81,6 +84,7 @@ app.get("/api/configuration", async (req: express.Request, resp: express.Respons
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/deployments...");
     setNoCache(resp);
+
     aci.GetDeployments().then((data: ContainerGroupListResult) => {
         resp.json(data);
     }).catch((reason: any) => {
@@ -99,6 +103,7 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
         let tag = req.body.tag;
         let numCpu = req.body.numCpu;
         let memory = req.body.memoryInGB;
+
         aci.CreateNewDeployment(numCpu, memory, tag).then((data: ContainerGroup) => {
             resp.json(data);
         }).catch((reason: any) => {
@@ -109,6 +114,7 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing GET /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
+
     aci.GetDeployment(req.params.deploymentId).then((data: ContainerGroup) => {
         resp.json(data);
     }).catch((reason: any) => {
@@ -118,6 +124,7 @@ app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: exp
 app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/stop...`);
     setNoCache(resp);
+
     aci.StopDeployment(req.params.deploymentId).then(() => {
         resp.status(200).end();
     }).catch((reason: any) => {
@@ -127,6 +134,7 @@ app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, res
 app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing DELETE /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
+    
     aci.DeleteDeployment(req.params.deploymentId).then(() => {
         resp.status(200).end();
     }).catch((reason: any) => {
