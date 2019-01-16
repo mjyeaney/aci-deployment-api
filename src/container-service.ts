@@ -8,8 +8,7 @@ import * as msrest from "ms-rest-azure";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy } from "./common-types";
-import { IPendingDeploymentCache } from "./pending-deployment-cache";
+import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingDeploymentCache } from "./common-types";
 
 export class ContainerService implements IContainerService {
     private readonly TENANT_ID = process.env.TENANT_ID || "";
@@ -270,6 +269,7 @@ export class ContainerService implements IContainerService {
     }
 
     private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, tag: string | undefined) {
+        // Note that tag is optional, but may be specified.
         let imageName = this.CONTAINER_IMAGE_NAME;
         if (tag) {
             imageName = imageName + `:${tag}`;

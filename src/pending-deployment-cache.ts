@@ -4,15 +4,9 @@
 // This is designed to write a file to and underlying replicated storage location.
 //
 
-import { ILogger } from "./common-types";
+import { ILogger, IPendingDeploymentCache } from "./common-types";
 import * as lockfile from "proper-lockfile";
 import * as io from "fs";
-
-export interface IPendingDeploymentCache {
-    GetCurrentDeploymentNames(): Promise<string[]>;
-    AddPendingDeploymentName(name: string): Promise<void>;
-    RemoveDeploymentName(name: string): Promise<void>;
-}
 
 export class PendingDeploymentCache implements IPendingDeploymentCache {
     private readonly SYNC_ROOT_FILE_PATH: string = "./data/pending.lock";

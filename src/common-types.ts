@@ -80,6 +80,23 @@ export class GroupMatchInformation {
     WasTerminated: boolean = false;
 }
 
+export interface IPendingDeploymentCache {
+    /**
+     * Returns the current pending deployments.
+     */
+    GetCurrentDeploymentNames(): Promise<string[]>;
+
+    /**
+     * Adds a deployment to the list of pending.
+     */
+    AddPendingDeploymentName(name: string): Promise<void>;
+
+    /**
+     * Removes a deployment from the current pending list.
+     */
+    RemoveDeploymentName(name: string): Promise<void>;
+}
+
 export interface IReportingService {
     /**
      * Returns overview details for current environment.
@@ -115,6 +132,7 @@ export class ConfigurationDetails {
 
 export class ContainerGroupGridRow {
     Name?: string;
+    Image?: string;
     Status?: string;
     CpuCount: number = 0;
     MemoryInGB: number = 0;
