@@ -42,7 +42,7 @@ export interface IContainerService {
      * Primarily a test method, but returns information for any instances that match the provided deployment. 
      * Note this mutates the pending deployment cache.
      */
-    GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation>;
+    GetMatchingGroupInfo(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<GroupMatchInformation>;
 
     /**
      * Returns full instance-level details about all deployed instances. Note this is an O(n^2) call.

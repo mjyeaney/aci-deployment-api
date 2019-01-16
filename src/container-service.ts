@@ -136,7 +136,7 @@ export class ContainerService implements IContainerService {
             const start = Date.now();
             this.initializeAciClient()
             .then(() => {
-                return this.GetMatchingGroupInfo(numCpu, memoryInGB);
+                return this.GetMatchingGroupInfo(numCpu, memoryInGB, tag);
             })
             .then(async (matchInfo: GroupMatchInformation) => {
                 //
@@ -177,7 +177,7 @@ export class ContainerService implements IContainerService {
         });
     }
 
-    public async GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation> {
+    public async GetMatchingGroupInfo(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<GroupMatchInformation> {
         ////////////////////////////////////////////////////////////////////////////////////
         //
         // BEGIN CRITICAL SECTION
@@ -201,13 +201,19 @@ export class ContainerService implements IContainerService {
 
             const groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
                 return this.GetDeployment(group.name!);
-            }));       
+            }));
+
+            // Note that image may or may not specify a tag
+            let imageName = this.CONTAINER_IMAGE_NAME;
+            if (tag) {
+                imageName = imageName + `:${tag}`;
+            }
             
             const matched = groupStatus.some((details) => {
                 const isMatch = this.matchingStrategy.IsMatch(details, 
                     numCpu, 
                     memoryInGB, 
-                    this.CONTAINER_IMAGE_NAME, 
+                    imageName, 
                     pendingDeployments);
                     
                 if (isMatch) {
