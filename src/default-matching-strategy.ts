@@ -3,7 +3,7 @@
 // matches the specified resource description
 //
 
-import { IGroupMatchingStrategy } from "./common-types";
+import { IGroupMatchingStrategy, ContainerGroupStatus } from "./common-types";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
 export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
@@ -25,8 +25,8 @@ export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
             // If the above metrics matched, now check status:
             // Status can either be "Stopped" or "Terminated"
             if (instance.instanceView!.state){
-                if ((instance.instanceView!.state!.toLowerCase() === "stopped") ||
-                    (instance.instanceView!.state!.toLowerCase() === "terminated")) {
+                if ((instance.instanceView!.state!.toLowerCase() === ContainerGroupStatus.Stopped) ||
+                    (instance.instanceView!.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
 
                     // Match!!!
                     return true;

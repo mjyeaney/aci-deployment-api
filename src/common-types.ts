@@ -104,6 +104,13 @@ export interface IReportingService {
     GetOverviewDetails(): Promise<OverviewDetails>;
 }
 
+export enum ContainerGroupStatus {
+    Running = "running",
+    Pending = "pending",
+    Stopped = "stopped",
+    Terminated = "terminated"
+}
+
 export class OverviewDetails {
     RunningInstances: number = 0;
     StoppedInstances: number = 0;

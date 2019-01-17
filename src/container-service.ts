@@ -8,7 +8,7 @@ import * as msrest from "ms-rest-azure";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingDeploymentCache } from "./common-types";
+import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingDeploymentCache, ContainerGroupStatus } from "./common-types";
 
 export class ContainerService implements IContainerService {
     private readonly TENANT_ID = process.env.TENANT_ID || "";
@@ -66,18 +66,18 @@ export class ContainerService implements IContainerService {
 
                 // List container instances / groups
                 this.aciClient!.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName)
-                .then((containerGroup) => {
-                    resolve(containerGroup);
-                })
-                .catch((err) => {
-                    this.logger.Write("*****Error in ::GetDeployment*****");
-                    this.logger.Write(JSON.stringify(err));
-                    reject(err);
-                })
-                .finally(() => {
-                    const duration = Date.now() - start;
-                    this.logger.Write(`::GetDeployment duration: ${duration} ms`);
-                });
+                    .then((containerGroup) => {
+                        resolve(containerGroup);
+                    })
+                    .catch((err) => {
+                        this.logger.Write("*****Error in ::GetDeployment*****");
+                        this.logger.Write(JSON.stringify(err));
+                        reject(err);
+                    })
+                    .finally(() => {
+                        const duration = Date.now() - start;
+                        this.logger.Write(`::GetDeployment duration: ${duration} ms`);
+                    });
 
             });
         });
@@ -87,25 +87,25 @@ export class ContainerService implements IContainerService {
         return new Promise<void>((resolve, reject) => {
             const start = Date.now();
             this.initializeAciClient()
-            .then(() => {
-                return this.initializeArmClient();
-            })
-            .then(() => {
-                return this.aciClient!.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName);
-            })
-            .then((group) => {
-                return this.armClient!.resources.deleteById(group.id!, "2018-10-01");
-            })
-            .then(() => {
-                resolve();
-            })
-            .catch((reason) => {
-                reject(reason);
-            })
-            .finally(() => {
-                const duration = Date.now() - start;
-                this.logger.Write(`::DeleteDeployment duration: ${duration} ms`);
-            })
+                .then(() => {
+                    return this.initializeArmClient();
+                })
+                .then(() => {
+                    return this.aciClient!.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName);
+                })
+                .then((group) => {
+                    return this.armClient!.resources.deleteById(group.id!, "2018-10-01");
+                })
+                .then(() => {
+                    resolve();
+                })
+                .catch((reason) => {
+                    reject(reason);
+                })
+                .finally(() => {
+                    const duration = Date.now() - start;
+                    this.logger.Write(`::DeleteDeployment duration: ${duration} ms`);
+                })
         });
     }
 
@@ -113,20 +113,20 @@ export class ContainerService implements IContainerService {
         return new Promise<void>((resolve, reject) => {
             const start = Date.now();
             this.initializeAciClient()
-            .then(() => {
-                return this.aciClient!.containerGroups.stop(this.RESOURCE_GROUP_NAME,
-                    containerGroupName);
-            })
-            .then(() => {
-                resolve();
-            })
-            .catch((reason: any) => {
-                reject(reason);
-            })
-            .finally(() => {
-                const duration = Date.now() - start;
-                this.logger.Write(`::StopDeployment duration: ${duration} ms`);
-            })
+                .then(() => {
+                    return this.aciClient!.containerGroups.stop(this.RESOURCE_GROUP_NAME,
+                        containerGroupName);
+                })
+                .then(() => {
+                    resolve();
+                })
+                .catch((reason: any) => {
+                    reject(reason);
+                })
+                .finally(() => {
+                    const duration = Date.now() - start;
+                    this.logger.Write(`::StopDeployment duration: ${duration} ms`);
+                })
         })
     }
 
@@ -134,45 +134,45 @@ export class ContainerService implements IContainerService {
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
             this.initializeAciClient()
-            .then(() => {
-                return this.GetMatchingGroupInfo(numCpu, memoryInGB, tag);
-            })
-            .then(async (matchInfo: GroupMatchInformation) => {
-                //
-                // Two cases here: One, if no match was found, we need to kick off a new deployment.
-                // Second, if a match was found, we are either starting or re-starting, depending on 
-                // how the instance exited.
-                //
-                if (!matchInfo.Group) {
-                    this.logger.Write("Starting new container group deployment (no match found)...");
-                    matchInfo.Group = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.RESOURCE_GROUP_NAME, 
-                        matchInfo.Name, 
-                        this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name, tag));
-                } else {
-                    this.logger.Write("Starting existing container group (match found)...");
-                    if (matchInfo.WasTerminated){
-                        this.logger.Write("Re-starting due to termination...");
-                        await this.aciClient!.containerGroups.restart(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                .then(() => {
+                    return this.GetMatchingGroupInfo(numCpu, memoryInGB, tag);
+                })
+                .then(async (matchInfo: GroupMatchInformation) => {
+                    //
+                    // Two cases here: One, if no match was found, we need to kick off a new deployment.
+                    // Second, if a match was found, we are either starting or re-starting, depending on 
+                    // how the instance exited.
+                    //
+                    if (!matchInfo.Group) {
+                        this.logger.Write("Starting new container group deployment (no match found)...");
+                        matchInfo.Group = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.RESOURCE_GROUP_NAME,
+                            matchInfo.Name,
+                            this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name, tag));
                     } else {
-                        await this.aciClient!.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                        this.logger.Write("Starting existing container group (match found)...");
+                        if (matchInfo.WasTerminated) {
+                            this.logger.Write("Re-starting due to termination...");
+                            await this.aciClient!.containerGroups.restart(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                        } else {
+                            await this.aciClient!.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                        }
                     }
-                }
-                return matchInfo.Group;
-            })
-            .then(async (result: ContainerGroup) => {
-                await this.pendingCache.RemoveDeploymentName(result.name!);
-                resolve(result);
-            })
-            .catch((err: any) => {
-                this.logger.Write("*****Error in ::CreateNewDeployment*****");
-                this.logger.Write(JSON.stringify(err));
-                reject(err);
-            })
-            .finally(() => {
-                const end: number = Date.now();
-                const duration = end - start;
-                this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
-            });
+                    return matchInfo.Group;
+                })
+                .then(async (result: ContainerGroup) => {
+                    await this.pendingCache.RemoveDeploymentName(result.name!);
+                    resolve(result);
+                })
+                .catch((err: any) => {
+                    this.logger.Write("*****Error in ::CreateNewDeployment*****");
+                    this.logger.Write(JSON.stringify(err));
+                    reject(err);
+                })
+                .finally(() => {
+                    const end: number = Date.now();
+                    const duration = end - start;
+                    this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
+                });
         });
     }
 
@@ -189,7 +189,7 @@ export class ContainerService implements IContainerService {
         // are "claimed" but not yet started.
         //
         const matchInfo = new GroupMatchInformation();
-        await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
+        await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5 });
         this.logger.Write(`Entered critical section...`);
 
         try {
@@ -207,23 +207,23 @@ export class ContainerService implements IContainerService {
             if (tag) {
                 imageName = imageName + `:${tag}`;
             }
-            
+
             const matched = groupStatus.some((details) => {
-                const isMatch = this.matchingStrategy.IsMatch(details, 
-                    numCpu, 
-                    memoryInGB, 
-                    imageName, 
+                const isMatch = this.matchingStrategy.IsMatch(details,
+                    numCpu,
+                    memoryInGB,
+                    imageName,
                     pendingDeployments);
-                    
+
                 if (isMatch) {
-                    
+
                     // Check to see if the instance was terminated - we'll need to adjust 
                     // how we start downstream.
-                    if ((details.instanceView!.state) && 
-                        (details.instanceView!.state!.toLowerCase() === "terminated")) {
+                    if ((details.instanceView!.state) &&
+                        (details.instanceView!.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
                         matchInfo.WasTerminated = true;
                     }
-                    
+
                     // Capture remaining details
                     matchInfo.Name = details.name!;
                     matchInfo.Group = details;
@@ -242,14 +242,14 @@ export class ContainerService implements IContainerService {
             // (as it's potentially not yet started).
             await this.pendingCache.AddPendingDeploymentName(matchInfo.Name);
         }
-        catch (err){
+        catch (err) {
             this.logger.Write(`ERROR: Error during critical section: ${err}`);
         }
         finally {
             this.logger.Write(`Critical section finished - releasing mutex...`);
             lockfile.unlockSync(this.SYNC_ROOT_FILE_PATH);
         }
-        
+
         //
         // END CRITICAL SECTION
         //
@@ -323,13 +323,13 @@ export class ContainerService implements IContainerService {
                     this.CLIENT_SECRET,
                     this.TENANT_ID
                 )
-                .then((creds) => {
-                    this.logger.Write("SPN login complete. AciClient ready to use.");
-                    this.aciClient = new ContainerInstanceManagementClient(creds, this.SUBSCRIPTION_ID, undefined, {
-                        longRunningOperationRetryTimeout: 5
+                    .then((creds) => {
+                        this.logger.Write("SPN login complete. AciClient ready to use.");
+                        this.aciClient = new ContainerInstanceManagementClient(creds, this.SUBSCRIPTION_ID, undefined, {
+                            longRunningOperationRetryTimeout: 5
+                        });
+                        resolve();
                     });
-                    resolve();
-                });
             } else {
                 this.logger.Write("AciClient already initialized...");
                 resolve();
@@ -346,13 +346,13 @@ export class ContainerService implements IContainerService {
                     this.CLIENT_SECRET,
                     this.TENANT_ID
                 )
-                .then((creds) => {
-                    this.logger.Write("SPN login complete. ArmClient ready to use.");
-                    this.armClient = new ResourceManagementClient.default(creds, this.SUBSCRIPTION_ID, undefined, {
-                        longRunningOperationRetryTimeout: 5
+                    .then((creds) => {
+                        this.logger.Write("SPN login complete. ArmClient ready to use.");
+                        this.armClient = new ResourceManagementClient.default(creds, this.SUBSCRIPTION_ID, undefined, {
+                            longRunningOperationRetryTimeout: 5
+                        });
+                        resolve();
                     });
-                    resolve();
-                });
             } else {
                 this.logger.Write("ArmClient already initialized...");
                 resolve();
