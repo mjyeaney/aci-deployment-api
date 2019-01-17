@@ -8,8 +8,7 @@ import * as msrest from "ms-rest-azure";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-import { ILogger, IContainerService, GroupMatchInformation } from "./common-types";
-import { IPendingDeploymentCache } from "./pending-deployment-cache";
+import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingDeploymentCache } from "./common-types";
 
 export class ContainerService implements IContainerService {
     private readonly TENANT_ID = process.env.TENANT_ID || "";
@@ -29,11 +28,13 @@ export class ContainerService implements IContainerService {
 
     private readonly logger: ILogger;
     private readonly pendingCache: IPendingDeploymentCache;
+    private readonly matchingStrategy: IGroupMatchingStrategy;
     private aciClient: ContainerInstanceManagementClient | undefined;
     private armClient: ResourceManagementClient.default | undefined;
 
-    constructor(logger: ILogger, pendingCache: IPendingDeploymentCache) {
+    constructor(logger: ILogger, matchingStrategy: IGroupMatchingStrategy, pendingCache: IPendingDeploymentCache) {
         this.logger = logger;
+        this.matchingStrategy = matchingStrategy;
         this.pendingCache = pendingCache;
     }
 
@@ -129,22 +130,32 @@ export class ContainerService implements IContainerService {
         })
     }
 
-    public async CreateNewDeployment(numCpu: number, memoryInGB: number) {
+    public async CreateNewDeployment(numCpu: number, memoryInGB: number, tag: string | undefined) {
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
             this.initializeAciClient()
             .then(() => {
-                return this.GetMatchingGroupInfo(numCpu, memoryInGB);
+                return this.GetMatchingGroupInfo(numCpu, memoryInGB, tag);
             })
             .then(async (matchInfo: GroupMatchInformation) => {
+                //
+                // Two cases here: One, if no match was found, we need to kick off a new deployment.
+                // Second, if a match was found, we are either starting or re-starting, depending on 
+                // how the instance exited.
+                //
                 if (!matchInfo.Group) {
                     this.logger.Write("Starting new container group deployment (no match found)...");
-                    matchInfo.Group = await this.aciClient!.containerGroups.createOrUpdate(this.RESOURCE_GROUP_NAME, 
+                    matchInfo.Group = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.RESOURCE_GROUP_NAME, 
                         matchInfo.Name, 
-                        this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name));
+                        this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name, tag));
                 } else {
                     this.logger.Write("Starting existing container group (match found)...");
-                    await this.aciClient!.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                    if (matchInfo.WasTerminated){
+                        this.logger.Write("Re-starting due to termination...");
+                        await this.aciClient!.containerGroups.restart(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                    } else {
+                        await this.aciClient!.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                    }
                 }
                 return matchInfo.Group;
             })
@@ -165,13 +176,13 @@ export class ContainerService implements IContainerService {
         });
     }
 
-    public async GetMatchingGroupInfo(numCpu: number, memoryInGB: number): Promise<GroupMatchInformation> {
+    public async GetMatchingGroupInfo(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<GroupMatchInformation> {
         ////////////////////////////////////////////////////////////////////////////////////
         //
         // BEGIN CRITICAL SECTION
         //
         // Note this finds the first, unused matching deployment...and so will every other request on this 
-        // and other nodes. This leads to a race, with multiple, overlapping requests trying to re-use the same 
+        // (and other() nodes. This leads to a race, with multiple, overlapping requests trying to re-use the same 
         // deployment (which works but causes silent failures as only a single node is started).
         //
         // To combat this, we're applying a critical section around this code and tracking which instances 
@@ -184,23 +195,40 @@ export class ContainerService implements IContainerService {
         try {
             // List all existing groups, and lookup the status of each (..this is O(n^2)..may have runtime issues)
             // May be a better strategy to introduce partitioning scheme to limit traversal
+            const pendingDeployments = await this.pendingCache.GetCurrentDeploymentNames();
             const groups = await this.GetDeployments();
+
             const groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
                 return this.GetDeployment(group.name!);
             }));
 
-            const pendingDeployments = await this.pendingCache.GetCurrentDeploymentNames();
+            // Note that image may or may not specify a tag
+            let imageName = this.CONTAINER_IMAGE_NAME;
+            if (tag) {
+                imageName = imageName + `:${tag}`;
+            }
+            
             const matched = groupStatus.some((details) => {
-                if ((details.instanceView!.state === "Stopped") &&
-                    (details.containers[0].image === this.CONTAINER_IMAGE_NAME) &&
-                    (details.containers[0].resources.requests.cpu === numCpu) &&
-                    (details.containers[0].resources.requests.memoryInGB === memoryInGB) &&
-                    (pendingDeployments.indexOf(details.name!) === -1)) {
+                const isMatch = this.matchingStrategy.IsMatch(details, 
+                    numCpu, 
+                    memoryInGB, 
+                    imageName, 
+                    pendingDeployments);
+                    
+                if (isMatch) {
+                    
+                    // Check to see if the instance was terminated - we'll need to adjust 
+                    // how we start downstream.
+                    if ((details.instanceView!.state) && 
+                        (details.instanceView!.state!.toLowerCase() === "terminated")) {
+                        matchInfo.WasTerminated = true;
+                    }
+                    
+                    // Capture remaining details
                     matchInfo.Name = details.name!;
                     matchInfo.Group = details;
-                    return true;
                 }
-                return false;
+                return isMatch;
             });
 
             // No matches found - create a new deployment name
@@ -240,11 +268,16 @@ export class ContainerService implements IContainerService {
         return groupStatus;
     }
 
-    private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string) {
+    private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, tag: string | undefined) {
+        // Note that tag is optional, but may be specified.
+        let imageName = this.CONTAINER_IMAGE_NAME;
+        if (tag) {
+            imageName = imageName + `:${tag}`;
+        }
         return {
             containers: [{
                 name: "default-container",
-                image: this.CONTAINER_IMAGE_NAME,
+                image: imageName,
                 ports: [{
                     port: this.CONTAINER_PORT
                 }],

@@ -54,6 +54,7 @@ export class ServiceApi implements IServiceApi {
                     payload.map((item: any) => {
                         let row = new ContainerGroupGridRow();
                         row.Name = item.name!;
+                        row.Image = item.containers![0].image;
                         row.CpuCount = item.containers![0].resources!.requests!.cpu!;
                         row.MemoryInGB = item.containers![0].resources!.requests!.memoryInGB;
                         row.IpAddress = item.ipAddress!.ip!;

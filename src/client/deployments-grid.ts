@@ -8,14 +8,16 @@ export class DeploymentsGrid {
         return `
         <table>
             <colgroup>
-                <col width="30%" />
+                <col width="20%" />
                 <col width="*" />
+                <col width="350px" />
                 <col width="100px" />
                 <col width="100px" />
             </colgroup>
             <tr>
                 <th>Container Group Name</th>
                 <th>IP Address</th>
+                <th>Image Name</th>
                 <th>CPU Count</th>
                 <th>Memory (GB)</th>
             </tr>
@@ -30,6 +32,7 @@ export class DeploymentsGrid {
             <tr>
                 <td>${item.Name}</td>
                 <td>${item.IpAddress ? item.IpAddress : "Unassigned"}</td>
+                <td>${item.Image}</td>
                 <td>${item.CpuCount}</td>
                 <td>${item.MemoryInGB}</td>
             </tr>

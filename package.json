@@ -5,7 +5,8 @@
   "main": "./dist/server.js",
   "scripts": {
     "clean": "rm -rf ./dist/*",
-    "build": "npm run clean && tsc && npm run setup-data && npm run build-ui && npm run copy-assets && npm run bump-asset-vers",
+    "build": "npm run clean && npm run compile && npm run setup-data && npm run build-ui && npm run copy-assets && npm run bump-asset-vers",
+    "compile": "echo -n 'Compiling...' && tsc && echo 'Done!'",
     "build-ui": "rm -f ./dist/client/bundle.js && ./node_modules/browserify/bin/cmd.js ./dist/client/*.js -o ./dist/client/bundle.js && rm -f $(ls -d1 ./dist/client/*.js | grep -v bundle.js)",
     "setup-data": "cp -r ./src/data ./dist",
     "copy-assets": "rm -rf ./dist/static && cp -r ./src/static ./dist",
