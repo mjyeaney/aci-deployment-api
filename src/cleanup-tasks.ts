@@ -13,6 +13,7 @@ export interface ICleanupTaskRunner {
 }
 
 export class CleanupTaskScheduleInfo {
+    Enabled: boolean = false;
     Interval: string = "";
 }
 
@@ -28,7 +29,8 @@ export class CleanupTaskRunner implements ICleanupTaskRunner {
     constructor(logger: ILogger, pendingOps: IPendingOperationCache, aci: IContainerService){
         this.logger = logger;
 
-        // Add known tasks
+        // Add known tasks - later, we can dynamically enumerate these tasks 
+        // and filter by those which are enabled / etc.
         this.tasks.push(new PurgeUnusedDeployments(logger, pendingOps, aci));
     }
 
@@ -67,6 +69,7 @@ export class PurgeUnusedDeployments implements ICleanupTask {
     public GetScheduleInfo(): CleanupTaskScheduleInfo {
         this.logger.Write("Retreiving task schedule infomation for [PurgeUnusedDeployments]...");
         const config = new CleanupTaskScheduleInfo();
+        config.Enabled = true;
         config.Interval = "PT5M";
         return config;
     }
