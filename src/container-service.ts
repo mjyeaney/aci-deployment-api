@@ -8,32 +8,22 @@ import * as msrest from "ms-rest-azure";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingDeploymentCache, ContainerGroupStatus } from "./common-types";
+import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingOperationCache, ContainerGroupStatus, ConfigurationDetails } from "./common-types";
+import { IConfigService } from "./config-service";
 
 export class ContainerService implements IContainerService {
-    private readonly TENANT_ID = process.env.TENANT_ID || "";
-    private readonly CLIENT_ID = process.env.CLIENT_ID || "";
-    private readonly CLIENT_SECRET = process.env.CLIENT_SECRET || "";
-    private readonly SUBSCRIPTION_ID = process.env.SUBSCRIPTION_ID || "";
-    private readonly REGION = process.env.REGION || "";
-    private readonly RESOURCE_GROUP_NAME = process.env.RESOURCE_GROUP_NAME || "";
-    private readonly CONTAINER_IMAGE_NAME = process.env.CONTAINER_IMAGE || "";
-    private readonly CONTAINER_PORT = parseInt(process.env.CONTAINER_PORT || "");
-    private readonly CONTAINER_OS_TYPE = process.env.CONTAINER_OS_TYPE || "";
-    private readonly CONTAINER_REGISTRY_HOST = process.env.CONTAINER_REGISTRY_HOST || "";
-    private readonly CONTAINER_REGISTRY_USERNAME = process.env.CONTAINER_REGISTRY_USERNAME || "";
-    private readonly CONTAINER_REGISTRY_PASSWORD = process.env.CONTAINER_REGISTRY_PASSWORD || "";
-
     private readonly SYNC_ROOT_FILE_PATH: string = "./data/aci.lock";
 
     private readonly logger: ILogger;
-    private readonly pendingCache: IPendingDeploymentCache;
+    private readonly settings: ConfigurationDetails;
+    private readonly pendingCache: IPendingOperationCache;
     private readonly matchingStrategy: IGroupMatchingStrategy;
     private aciClient: ContainerInstanceManagementClient | undefined;
     private armClient: ResourceManagementClient.default | undefined;
 
-    constructor(logger: ILogger, matchingStrategy: IGroupMatchingStrategy, pendingCache: IPendingDeploymentCache) {
+    constructor(logger: ILogger, config: IConfigService, matchingStrategy: IGroupMatchingStrategy, pendingCache: IPendingOperationCache) {
         this.logger = logger;
+        this.settings = config.GetConfiguration();
         this.matchingStrategy = matchingStrategy;
         this.pendingCache = pendingCache;
     }
@@ -65,7 +55,7 @@ export class ContainerService implements IContainerService {
             this.initializeAciClient().then(() => {
 
                 // List container instances / groups
-                this.aciClient!.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName)
+                this.aciClient!.containerGroups.get(this.settings.ResourceGroup, containerGroupName)
                     .then((containerGroup) => {
                         resolve(containerGroup);
                     })
@@ -91,7 +81,7 @@ export class ContainerService implements IContainerService {
                     return this.initializeArmClient();
                 })
                 .then(() => {
-                    return this.aciClient!.containerGroups.get(this.RESOURCE_GROUP_NAME, containerGroupName);
+                    return this.aciClient!.containerGroups.get(this.settings.ResourceGroup, containerGroupName);
                 })
                 .then((group) => {
                     return this.armClient!.resources.deleteById(group.id!, "2018-10-01");
@@ -114,7 +104,7 @@ export class ContainerService implements IContainerService {
             const start = Date.now();
             this.initializeAciClient()
                 .then(() => {
-                    return this.aciClient!.containerGroups.stop(this.RESOURCE_GROUP_NAME,
+                    return this.aciClient!.containerGroups.stop(this.settings.ResourceGroup,
                         containerGroupName);
                 })
                 .then(() => {
@@ -145,16 +135,16 @@ export class ContainerService implements IContainerService {
                     //
                     if (!matchInfo.Group) {
                         this.logger.Write("Starting new container group deployment (no match found)...");
-                        matchInfo.Group = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.RESOURCE_GROUP_NAME,
+                        matchInfo.Group = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.settings.ResourceGroup,
                             matchInfo.Name,
                             this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name, tag));
                     } else {
                         this.logger.Write("Starting existing container group (match found)...");
                         if (matchInfo.WasTerminated) {
                             this.logger.Write("Re-starting due to termination...");
-                            await this.aciClient!.containerGroups.restart(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                            await this.aciClient!.containerGroups.restart(this.settings.ResourceGroup, matchInfo.Name);
                         } else {
-                            await this.aciClient!.containerGroups.start(this.RESOURCE_GROUP_NAME, matchInfo.Name);
+                            await this.aciClient!.containerGroups.start(this.settings.ResourceGroup, matchInfo.Name);
                         }
                     }
                     return matchInfo.Group;
@@ -203,7 +193,7 @@ export class ContainerService implements IContainerService {
             }));
 
             // Note that image may or may not specify a tag
-            let imageName = this.CONTAINER_IMAGE_NAME;
+            let imageName = this.settings.ContainerImage;
             if (tag) {
                 imageName = imageName + `:${tag}`;
             }
@@ -270,7 +260,7 @@ export class ContainerService implements IContainerService {
 
     private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, tag: string | undefined) {
         // Note that tag is optional, but may be specified.
-        let imageName = this.CONTAINER_IMAGE_NAME;
+        let imageName = this.settings.ContainerImage;
         if (tag) {
             imageName = imageName + `:${tag}`;
         }
@@ -279,7 +269,7 @@ export class ContainerService implements IContainerService {
                 name: "default-container",
                 image: imageName,
                 ports: [{
-                    port: this.CONTAINER_PORT
+                    port: this.settings.ContainerPort
                 }],
                 resources: {
                     requests: {
@@ -289,10 +279,10 @@ export class ContainerService implements IContainerService {
                 }
             }],
             imageRegistryCredentials: this.getImageRegistryCredentials(),
-            location: this.REGION,
-            osType: this.CONTAINER_OS_TYPE,
+            location: this.settings.Region,
+            osType: this.settings.ContainerOs,
             ipAddress: {
-                ports: [{ port: this.CONTAINER_PORT }],
+                ports: [{ port: this.settings.ContainerPort }],
                 type: "public",
                 dnsNameLabel: groupName
             },
@@ -301,15 +291,15 @@ export class ContainerService implements IContainerService {
     }
 
     private getImageRegistryCredentials(): ImageRegistryCredential[] | undefined {
-        if ((!this.CONTAINER_REGISTRY_HOST) || (!this.CONTAINER_REGISTRY_USERNAME)) {
+        if ((this.settings.ContainerRegistryHost === "") || (this.settings.ContainerRegistryUsername === "")) {
             return undefined;
         }
 
         const credentials = [];
         credentials.push({
-            server: this.CONTAINER_REGISTRY_HOST,
-            username: this.CONTAINER_REGISTRY_USERNAME,
-            password: this.CONTAINER_REGISTRY_PASSWORD
+            server: this.settings.ContainerRegistryHost,
+            username: this.settings.ContainerRegistryUsername,
+            password: this.settings.ContainerRegistryPassword
         });
         return credentials;
     }
@@ -319,17 +309,17 @@ export class ContainerService implements IContainerService {
             if (!this.aciClient) {
                 this.logger.Write("Begining SPN login...");
 
-                msrest.loginWithServicePrincipalSecret(this.CLIENT_ID,
-                    this.CLIENT_SECRET,
-                    this.TENANT_ID
+                msrest.loginWithServicePrincipalSecret(this.settings.ClientId,
+                    this.settings.ClientSecret,
+                    this.settings.TenantId
                 )
-                    .then((creds) => {
-                        this.logger.Write("SPN login complete. AciClient ready to use.");
-                        this.aciClient = new ContainerInstanceManagementClient(creds, this.SUBSCRIPTION_ID, undefined, {
-                            longRunningOperationRetryTimeout: 5
-                        });
-                        resolve();
+                .then((creds) => {
+                    this.logger.Write("SPN login complete. AciClient ready to use.");
+                    this.aciClient = new ContainerInstanceManagementClient(creds, this.settings.SubscriptionId, undefined, {
+                        longRunningOperationRetryTimeout: 5
                     });
+                    resolve();
+                });
             } else {
                 this.logger.Write("AciClient already initialized...");
                 resolve();
@@ -342,17 +332,17 @@ export class ContainerService implements IContainerService {
             if (!this.armClient) {
                 this.logger.Write("Begining SPN login...");
 
-                msrest.loginWithServicePrincipalSecret(this.CLIENT_ID,
-                    this.CLIENT_SECRET,
-                    this.TENANT_ID
+                msrest.loginWithServicePrincipalSecret(this.settings.ClientId,
+                    this.settings.ClientSecret,
+                    this.settings.TenantId
                 )
-                    .then((creds) => {
-                        this.logger.Write("SPN login complete. ArmClient ready to use.");
-                        this.armClient = new ResourceManagementClient.default(creds, this.SUBSCRIPTION_ID, undefined, {
-                            longRunningOperationRetryTimeout: 5
-                        });
-                        resolve();
+                .then((creds) => {
+                    this.logger.Write("SPN login complete. ArmClient ready to use.");
+                    this.armClient = new ResourceManagementClient.default(creds, this.settings.SubscriptionId, undefined, {
+                        longRunningOperationRetryTimeout: 5
                     });
+                    resolve();
+                });
             } else {
                 this.logger.Write("ArmClient already initialized...");
                 resolve();
