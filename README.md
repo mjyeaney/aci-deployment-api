@@ -44,7 +44,7 @@ Note that on Azure AppServices environments, this folder should be the root of t
 
 ### Deployment
 
-The application is designed to work on Azure AppService, and there are deployment scripts in the `deploy` folder. Modify these as needed for your particular environemnt.
+The application is designed to work on Azure AppService, and there are deployment scripts in the `deploy` folder. Modify these as needed for your particular environemnt. Note that there are some long-running background jobs (~4 hours, located in `/src/cleanup-tasks.ts` which require ensuring the WebApp is set to `AlwaysOn`).
 
 Note that the following environment variables will need set in order for the application to run. 
 
@@ -74,7 +74,5 @@ For local development, you may place a `.env` file in your root folder to set th
 ### Future Work
 
 The dashboarding experience is rather limited right now, but the intention is to give a better overview on the history of utilization. Note that the reporting data is ephemeral and held only in-memory on the nodes. This needs moved into a persistent storage location.
-
-Additionally, there are some potential issues with the long-running POST requests to `/api/deployments` (which deploys new container groups). This needs replaced with a proper background job system that passes continuation tokens back to the clients.
 
 ![Screenshot](docs/basic-screenshot.png)
