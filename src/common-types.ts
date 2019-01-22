@@ -127,14 +127,19 @@ export class SequenceSummary {
 }
 
 export class ConfigurationDetails {
-    TenantId: string | undefined;
-    SubscriptionId: string | undefined;
-    Region: string | undefined;
-    ResourceGroup: string | undefined;
-    ContainerImage: string | undefined;
-    ContainerPort: number | undefined;
-    ContainerOs: string | undefined;
-    ReportingRefreshInterval: string | undefined;
+    TenantId: string = "";
+    SubscriptionId: string = "";
+    ClientId: string = "";
+    ClientSecret: string = "";
+    Region: string = "";
+    ResourceGroup: string = "";
+    ContainerImage: string = "";
+    ContainerPort: number = 0;
+    ContainerOs: string = "";
+    ReportingRefreshInterval: string = "";
+    ContainerRegistryHost: string = "";
+    ContainerRegistryUsername: string = "";
+    ContainerRegistryPassword: string = "";
 }
 
 export class ContainerGroupGridRow {
