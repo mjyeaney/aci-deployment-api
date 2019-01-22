@@ -103,7 +103,7 @@ export class PurgeUnusedDeployments implements ICleanupTask {
 
                     this.logger.Write(`Instance last update: ${duration} hours ago`);
 
-                    if (duration >= 1){
+                    if (duration >= 4){
                         await this.pendingOps.AddPendingDeploymentName(c.name!);
                         itemsToRemove.push(c);
                     }
