@@ -98,7 +98,7 @@ export class PurgeUnusedDeployments implements ICleanupTask {
                     let diff = moment().diff(moment(lastUpdate));
                     let duration = moment.duration(diff).asHours();
 
-                    this.logger.Write(`Instance last update: ${lastUpdate} hours ago`);
+                    this.logger.Write(`Instance last update: ${duration} hours ago`);
 
                     if (duration >= 1){
                         await this.pendingOps.AddPendingDeploymentName(c.name!);
