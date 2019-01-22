@@ -116,7 +116,16 @@ export class PurgeUnusedDeployments implements ICleanupTask {
         this.logger.Write(`Removing ${itemsToRemove.length} expired instances...`);
         for (let d of itemsToRemove){
             this.logger.Write(`Removing ${d.name}..`);
-            await this.aci.DeleteDeployment(d.name!);
+
+            // Until we implement singleton locking, mutliple nodes may be running this 
+            // code, causing a 404 on certain delete calls. 
+            try {
+                await this.aci.DeleteDeployment(d.name!);
+            }
+            catch (err){
+                this.logger.Write(`[ERROR] - ${JSON.stringify(err)}`);
+            }
+
             await this.pendingOps.RemovePendingOperation(d.name!);
         }
     }
