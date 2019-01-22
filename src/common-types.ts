@@ -80,7 +80,7 @@ export class GroupMatchInformation {
     WasTerminated: boolean = false;
 }
 
-export interface IPendingDeploymentCache {
+export interface IPendingOperationCache {
     /**
      * Returns the current pending deployments.
      */
@@ -98,6 +98,11 @@ export interface IPendingDeploymentCache {
 }
 
 export interface IReportingService {
+    /**
+     * Initializes and starts the reporting jobs.
+     */
+    Initialize(): void;
+
     /**
      * Returns overview details for current environment.
      */

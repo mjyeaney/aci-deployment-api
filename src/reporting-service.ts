@@ -22,7 +22,9 @@ export class ReportingService implements IReportingService {
         // Start background timer for this server instance to gather and report data
         this.logger.Write(`Configuring data refresh for ${this.refreshIntervalConfig}...`);
         this.refreshIntervalMs = moment.duration(this.refreshIntervalConfig).asMilliseconds();
+    }
 
+    public Initialize() {
         this.logger.Write("Starting SummaryServices background tasks...");
 
         // Setup the background tasks

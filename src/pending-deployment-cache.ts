@@ -4,11 +4,11 @@
 // This is designed to write a file to and underlying replicated storage location.
 //
 
-import { ILogger, IPendingDeploymentCache } from "./common-types";
+import { ILogger, IPendingOperationCache } from "./common-types";
 import * as lockfile from "proper-lockfile";
 import * as io from "fs";
 
-export class PendingDeploymentCache implements IPendingDeploymentCache {
+export class PendingOperationCache implements IPendingOperationCache {
     private readonly SYNC_ROOT_FILE_PATH: string = "./data/pending.lock";
     private readonly FILE_PATH: string = "./data/pending.cache";
     private readonly logger: ILogger;

@@ -1,14 +1,15 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, GroupMatchInformation, IPendingDeploymentCache, IGroupMatchingStrategy, IContainerService, IReportingService } from "./common-types";
+import { ILogger, GroupMatchInformation, IPendingOperationCache, IGroupMatchingStrategy, IContainerService, IReportingService } from "./common-types";
 import { ConsoleLogger } from "./logging";
 import { ContainerService }  from "./container-service";
 import { ReportingService }  from "./reporting-service";
 import { ConfigurationService, IConfigService } from "./config-service";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
-import { PendingDeploymentCache } from "./pending-deployment-cache";
+import { PendingOperationCache } from "./pending-deployment-cache";
 import { DefaultMatchingStrategy } from "./default-matching-strategy";
+import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanup-tasks";
 
 // Init environment
 dotenv.config();
@@ -17,10 +18,15 @@ dotenv.config();
 const logger: ILogger = new ConsoleLogger();
 const config: IConfigService = new ConfigurationService();
 const app: express.Application = express();
-const pendingCache: IPendingDeploymentCache = new PendingDeploymentCache(logger);
+const pendingCache: IPendingOperationCache = new PendingOperationCache(logger);
 const matchStrategy: IGroupMatchingStrategy = new DefaultMatchingStrategy();
 const aci: IContainerService = new ContainerService(logger, config, matchStrategy, pendingCache);
 const reporting: IReportingService = new ReportingService(logger, config, aci);
+const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, pendingCache, aci);
+
+// Startup background jobs on this node
+reporting.Initialize();
+cleanupManager.ScheduleAll();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
 // and JSON

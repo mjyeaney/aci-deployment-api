@@ -8,7 +8,7 @@ import * as msrest from "ms-rest-azure";
 import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingDeploymentCache, ContainerGroupStatus, ConfigurationDetails } from "./common-types";
+import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingOperationCache, ContainerGroupStatus, ConfigurationDetails } from "./common-types";
 import { IConfigService } from "./config-service";
 
 export class ContainerService implements IContainerService {
@@ -16,12 +16,12 @@ export class ContainerService implements IContainerService {
 
     private readonly logger: ILogger;
     private readonly settings: ConfigurationDetails;
-    private readonly pendingCache: IPendingDeploymentCache;
+    private readonly pendingCache: IPendingOperationCache;
     private readonly matchingStrategy: IGroupMatchingStrategy;
     private aciClient: ContainerInstanceManagementClient | undefined;
     private armClient: ResourceManagementClient.default | undefined;
 
-    constructor(logger: ILogger, config: IConfigService, matchingStrategy: IGroupMatchingStrategy, pendingCache: IPendingDeploymentCache) {
+    constructor(logger: ILogger, config: IConfigService, matchingStrategy: IGroupMatchingStrategy, pendingCache: IPendingOperationCache) {
         this.logger = logger;
         this.settings = config.GetConfiguration();
         this.matchingStrategy = matchingStrategy;
