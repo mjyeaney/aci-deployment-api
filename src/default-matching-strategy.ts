@@ -12,7 +12,7 @@ export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
         numCpu: number,
         memoryInGB: number,
         imageName: string,
-        pendingDeployments: string[]): boolean {
+        pendingOperations: string[]): boolean {
 
         // Current business logic requires same image, same CPU count, and same memory.
         // The, only the status of "Stopped" (managmenet API peration) or 
@@ -20,7 +20,7 @@ export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
         if ((instance.containers[0].image === imageName) &&
             (instance.containers[0].resources.requests.cpu === numCpu) &&
             (instance.containers[0].resources.requests.memoryInGB === memoryInGB) &&
-            (pendingDeployments.indexOf(instance.name!) === -1)) {
+            (pendingOperations.indexOf(instance.name!) === -1)) {
 
             // If the above metrics matched, now check status:
             // Status can either be "Stopped" or "Terminated"

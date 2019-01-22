@@ -59,7 +59,7 @@ export interface IGroupMatchingStrategy {
         numCpu: number,
         memoryInGB: number,
         imageName: string,
-        pendingDeployments: string[]): boolean;
+        pendingOperations: string[]): boolean;
 }
 
 export class GroupMatchInformation {
@@ -84,17 +84,17 @@ export interface IPendingOperationCache {
     /**
      * Returns the current pending deployments.
      */
-    GetCurrentDeploymentNames(): Promise<string[]>;
+    GetPendingOperations(): Promise<string[]>;
 
     /**
      * Adds a deployment to the list of pending.
      */
-    AddPendingDeploymentName(name: string): Promise<void>;
+    AddPendingOperation(name: string): Promise<void>;
 
     /**
      * Removes a deployment from the current pending list.
      */
-    RemoveDeploymentName(name: string): Promise<void>;
+    RemovePendingOperation(name: string): Promise<void>;
 }
 
 export interface IReportingService {

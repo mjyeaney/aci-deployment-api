@@ -150,7 +150,7 @@ export class ContainerService implements IContainerService {
                     return matchInfo.Group;
                 })
                 .then(async (result: ContainerGroup) => {
-                    await this.pendingCache.RemoveDeploymentName(result.name!);
+                    await this.pendingCache.RemovePendingOperation(result.name!);
                     resolve(result);
                 })
                 .catch((err: any) => {
@@ -185,7 +185,7 @@ export class ContainerService implements IContainerService {
         try {
             // List all existing groups, and lookup the status of each (..this is O(n^2)..may have runtime issues)
             // May be a better strategy to introduce partitioning scheme to limit traversal
-            const pendingDeployments = await this.pendingCache.GetCurrentDeploymentNames();
+            const pendingOps = await this.pendingCache.GetPendingOperations();
             const groups = await this.GetDeployments();
 
             const groupStatus = await Promise.all(groups.map(async (group: ContainerGroup) => {
@@ -203,7 +203,7 @@ export class ContainerService implements IContainerService {
                     numCpu,
                     memoryInGB,
                     imageName,
-                    pendingDeployments);
+                    pendingOps);
 
                 if (isMatch) {
 
@@ -230,7 +230,7 @@ export class ContainerService implements IContainerService {
             // Tack the matched instances as "off limits", so the next caller 
             // that enters this critical section won't also select the same match
             // (as it's potentially not yet started).
-            await this.pendingCache.AddPendingDeploymentName(matchInfo.Name);
+            await this.pendingCache.AddPendingOperation(matchInfo.Name);
         }
         catch (err) {
             this.logger.Write(`ERROR: Error during critical section: ${err}`);

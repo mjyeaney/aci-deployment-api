@@ -104,7 +104,7 @@ export class PurgeUnusedDeployments implements ICleanupTask {
                     this.logger.Write(`Instance last update: ${duration} hours ago`);
 
                     if (duration >= 4){
-                        await this.pendingOps.AddPendingDeploymentName(c.name!);
+                        await this.pendingOps.AddPendingOperation(c.name!);
                         itemsToRemove.push(c);
                     }
                 }
@@ -117,7 +117,7 @@ export class PurgeUnusedDeployments implements ICleanupTask {
         for (let d of itemsToRemove){
             this.logger.Write(`Removing ${d.name}..`);
             await this.aci.DeleteDeployment(d.name!);
-            await this.pendingOps.RemoveDeploymentName(d.name!);
+            await this.pendingOps.RemovePendingOperation(d.name!);
         }
     }
 }

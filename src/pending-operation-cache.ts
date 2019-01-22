@@ -17,14 +17,14 @@ export class PendingOperationCache implements IPendingOperationCache {
         this.logger = logger;
     }
 
-    public async GetCurrentDeploymentNames(): Promise<string[]> {
+    public async GetPendingOperations(): Promise<string[]> {
         this.logger.Write(`Getting current pending deployments...`);
         return new Promise<string[]>((resolve, reject) => {
             resolve(this.readSync());
         });
     }
 
-    public async AddPendingDeploymentName(name: string): Promise<void> {
+    public async AddPendingOperation(name: string): Promise<void> {
         this.logger.Write(`Adding pending deployment named ${name}...`);
         return new Promise<void>(async (resolve, reject) => {
             await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
@@ -36,7 +36,7 @@ export class PendingOperationCache implements IPendingOperationCache {
         });
     }
     
-    public async RemoveDeploymentName(name: string): Promise<void> {
+    public async RemovePendingOperation(name: string): Promise<void> {
         this.logger.Write(`Removing pending deployment named ${name}...`);
         return new Promise<void>(async (resolve, reject) => {
             await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});

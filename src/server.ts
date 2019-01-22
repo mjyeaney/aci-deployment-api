@@ -62,7 +62,7 @@ app.post("/api/test/getGroupMatchInfo", async (req: express.Request, resp: expre
 app.get("/api/test/getPendingDeployments", async (req: express.Request, resp: express.Response) => {
     setNoCache(resp);
     
-    pendingCache.GetCurrentDeploymentNames().then((names: string[]) => {
+    pendingCache.GetPendingOperations().then((names: string[]) => {
         resp.json(names);
     }).catch((reason: any) => {
         resp.status(500).json(reason);
