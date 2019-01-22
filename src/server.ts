@@ -7,7 +7,7 @@ import { ContainerService }  from "./container-service";
 import { ReportingService }  from "./reporting-service";
 import { ConfigurationService, IConfigService } from "./config-service";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
-import { PendingOperationCache } from "./pending-deployment-cache";
+import { PendingOperationCache } from "./pending-operation-cache";
 import { DefaultMatchingStrategy } from "./default-matching-strategy";
 import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanup-tasks";
 
