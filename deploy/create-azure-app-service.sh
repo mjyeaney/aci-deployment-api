@@ -25,7 +25,7 @@ az webapp config appsettings set -g $resource_group_name -n $webapp_name --setti
 az webapp config appsettings set -g $resource_group_name -n $webapp_name --settings CONTAINER_REGISTRY_HOST=
 az webapp config appsettings set -g $resource_group_name -n $webapp_name --settings CONTAINER_REGISTRY_USERNAME=
 az webapp config appsettings set -g $resource_group_name -n $webapp_name --settings CONTAINER_REGISTRY_PASSWORD=
-az webapp config appsettings set -g $resource_group_name -n $webapp_name --settings REPORTING_REFRESH_INTERVAL=
+az webapp config appsettings set -g $resource_group_name -n $webapp_name --settings REPORTING_REFRESH_INTERVAL=PT1M
 
 # Setup Easy Auth
 az webapp auth update  -g $resource_group_name -n $webapp_name --enabled true \
