@@ -50,7 +50,7 @@ export class UiBinding implements IUiBinding
     }
 
     public ShowUserInfo(authInfo: AuthInfo) {
-        $(".header .userBadge span").text(authInfo.UserName);
+        $(".header .userBadge span").text(authInfo.PrincipalName);
     }
 
     public ShowOverviewContent() {

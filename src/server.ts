@@ -104,7 +104,8 @@ app.get("/api/authinfo", async (req: express.Request, resp: express.Response) =>
 
     resp.json({
         UserName: userName,
-        PrincipalName: userPrincipalName
+        PrincipalName: userPrincipalName,
+        Raw: req.headers
     });
 });
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
