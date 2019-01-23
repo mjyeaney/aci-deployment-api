@@ -4,15 +4,31 @@
 // NOTE: The UI manipulatino needs fatored out of here..just copy/pasta'd for now.
 //
 
-import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow } from "../common-types";
+import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../common-types";
 
 export interface IServiceApi {
+    LoadAuthInfo(): Promise<AuthInfo>;
     LoadSummaryData(): Promise<OverviewDetails>;
     LoadConfigurationData(): Promise<ConfigurationDetails>;
     LoadInstancesData(): Promise<ContainerGroupGridRow[]>;
 }
 
 export class ServiceApi implements IServiceApi {
+    public LoadAuthInfo() {
+        return new Promise<AuthInfo>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/authinfo");
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    resolve(JSON.parse(xhr.responseText));
+                } else {
+                    reject(xhr.statusText);
+                }
+            };
+            xhr.send();
+        });
+    }
+
     public LoadSummaryData() {
         return new Promise<OverviewDetails>((resolve, reject) => {
             const xhr = new XMLHttpRequest();

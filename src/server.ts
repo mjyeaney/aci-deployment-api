@@ -87,6 +87,26 @@ app.get("/api/configuration", async (req: express.Request, resp: express.Respons
     setNoCache(resp);
     resp.json(config.GetConfiguration());
 });
+app.get("/api/authinfo", async (req: express.Request, resp: express.Response) => {
+    logger.Write("Executing GET /api/authinfo...");
+    setNoCache(resp);
+
+    let userName: string | undefined = "Unknown User";
+    let userPrincipalName: string | undefined = "unknown-user";
+
+    if (req.header("X-MS-CLIENT-DISPLAY-NAME")){
+        userName = req.header("X-MS-CLIENT-DISPLAY-NAME");
+    }
+
+    if (req.header("X-MS-CLIENT-PRINCIPAL-NAME")){
+        userPrincipalName = req.header("X-MS-CLIENT-PRINCIPAL-NAME");
+    }
+
+    resp.json({
+        UserName: userName,
+        PrincipalName: userPrincipalName
+    });
+});
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/deployments...");
     setNoCache(resp);

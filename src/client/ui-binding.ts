@@ -4,13 +4,14 @@
 
 import * as $ from "jquery";
 import { IChart, LineChart } from "./charting";
-import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow } from "../common-types";
+import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../common-types";
 import { DeploymentsGrid } from "./deployments-grid";
 
 export interface IUiBinding
 {
     SetupInitialState(): void;
     SetNavigationChangedCallback(onNavigation: (path: string) => void): void;
+    ShowUserInfo(authInfo: AuthInfo): void;
     ShowOverviewContent(): void;
     ShowConfigurationData(data: ConfigurationDetails): void;
     ShowSummaryViewData(data: OverviewDetails): void;
@@ -46,6 +47,10 @@ export class UiBinding implements IUiBinding
 
         // Fire on initial run incase there is no hash-change event (i.e., bookmark)
         updateUiForPath();
+    }
+
+    public ShowUserInfo(authInfo: AuthInfo) {
+        $(".header .userBadge span").text(authInfo.UserName);
     }
 
     public ShowOverviewContent() {

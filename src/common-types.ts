@@ -116,6 +116,11 @@ export enum ContainerGroupStatus {
     Terminated = "terminated"
 }
 
+export class AuthInfo {
+    UserName: string = "";
+    PrincipalName: string = "";
+}
+
 export class OverviewDetails {
     RunningInstances: number = 0;
     StoppedInstances: number = 0;

@@ -35,6 +35,16 @@ p { margin-bottom: 1em; }
     background-position: left center;
     padding-left: 2em;
 }
+.header .userBadge {
+    position: absolute;
+    right: 1em;
+    top: 1.25em;
+    color: #fff;
+}
+.header .userBadge i {
+    margin-right: .5em;
+    font-size: 1.25em;
+}
 
 .nav { 
     position: fixed;

@@ -32,6 +32,8 @@ class Application implements IApplication {
         this.ui.SetNavigationChangedCallback((path: string) => {
             this.OnNavigationSelected(path);
         });
+
+        this.loadAuthInfo();
     }
 
     public OnNavigationSelected(path: string) {
@@ -45,6 +47,11 @@ class Application implements IApplication {
                 this.loadInstanceView();
                 break;
         }
+    }
+
+    private async loadAuthInfo(){
+        const authInfo = await this.api.LoadAuthInfo();
+        this.ui.ShowUserInfo(authInfo);
     }
 
     private async loadConfigView(){
