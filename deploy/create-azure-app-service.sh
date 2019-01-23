@@ -10,7 +10,7 @@ webapp_name=SamplePortalApp
 # Create the app service plan, web app, and default NODEJS version
 az appservice plan create -n $appservice_plan_name -g $resource_group_name -l $location --sku $appservice_plan_size
 az webapp create -n $webapp_name -g $resource_group_name --plan $appservice_plan_name
-az webapp config appSettings set -g $resource_group_name -n $webapp_name --settings WEBSITE_NODE_DEFAULT_VERSION=10.6.0
+az webapp config appsettings set -g $resource_group_name -n $webapp_name --settings WEBSITE_NODE_DEFAULT_VERSION=10.6.0
 
 # Set configuration settings
 az webapp config appsettings set -g $resource_group_name -n $webapp_name --settings TENANT_ID=
