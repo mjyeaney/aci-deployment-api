@@ -31,45 +31,44 @@ export class ContainerService implements IContainerService {
     public async GetDeployments() {
         return new Promise<ContainerGroupListResult>((resolve, reject) => {
             const start = Date.now();
-            this.initializeAciClient().then(() => {
-
-                // List container instances / groups
-                this.aciClient!.containerGroups.list().then((containerGroups) => {
+            this.initializeAciClient()
+                .then(() => {
+                    return this.aciClient!.containerGroups.list();
+                })
+                .then((containerGroups) => {
                     resolve(containerGroups);
-                }).catch((err) => {
+                })
+                .catch((err) => {
                     this.logger.Write("*****Error in ::GetDeployments*****");
                     this.logger.Write(JSON.stringify(err));
                     reject(err);
-                }).finally(() => {
+                })
+                .finally(() => {
                     const duration = Date.now() - start;
                     this.logger.Write(`::GetDeployments duration: ${duration} ms`);
                 });
-
-            });
         });
     }
 
     public async GetDeployment(containerGroupName: string) {
         return new Promise<ContainerGroup>((resolve, reject) => {
             const start = Date.now();
-            this.initializeAciClient().then(() => {
-
-                // List container instances / groups
-                this.aciClient!.containerGroups.get(this.settings.ResourceGroup, containerGroupName)
-                    .then((containerGroup) => {
-                        resolve(containerGroup);
-                    })
-                    .catch((err) => {
-                        this.logger.Write("*****Error in ::GetDeployment*****");
-                        this.logger.Write(JSON.stringify(err));
-                        reject(err);
-                    })
-                    .finally(() => {
-                        const duration = Date.now() - start;
-                        this.logger.Write(`::GetDeployment duration: ${duration} ms`);
-                    });
-
-            });
+            this.initializeAciClient()
+                .then(() => {
+                    return this.aciClient!.containerGroups.get(this.settings.ResourceGroup, containerGroupName);
+                })
+                .then((containerGroup) => {
+                    resolve(containerGroup);
+                })
+                .catch((err) => {
+                    this.logger.Write("*****Error in ::GetDeployment*****");
+                    this.logger.Write(JSON.stringify(err));
+                    reject(err);
+                })
+                .finally(() => {
+                    const duration = Date.now() - start;
+                    this.logger.Write(`::GetDeployment duration: ${duration} ms`);
+                });
         });
     }
 

@@ -24,6 +24,13 @@ zip -q -r ../deploy/deploy.zip .
 cd ..
 echo "Done!"
 
+# Remove the unit testing folder from the zip file
+echo -n "Removing /tests folder from archive..."
+cd ./dist
+zip -d ../deploy/deploy.zip tests/*.*
+cd ..
+echo "Done!"
+
 # Initiate zip deployment
 echo "Starting Azure deployment..."
 az webapp deployment source config-zip -n $webapp_name -g $resource_group_name --src deploy/deploy.zip
