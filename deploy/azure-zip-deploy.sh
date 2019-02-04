@@ -17,6 +17,11 @@ echo -n "Removing environment files..."
 rm -f dist/.env
 echo "Done!"
 
+# Remove the unit testing folder 
+echo -n "Removing /tests folder..."
+rm -rf dist/tests
+echo "Done!"
+
 # Create the zip file and deploy
 echo -n "Creating ZIP deployment file..."
 cd ./dist
@@ -24,12 +29,8 @@ zip -q -r ../deploy/deploy.zip .
 cd ..
 echo "Done!"
 
-# Remove the unit testing folder from the zip file
-echo -n "Removing /tests folder from archive..."
-cd ./dist
-zip -d ../deploy/deploy.zip tests/*.*
-cd ..
-echo "Done!"
+# Gentle reminder
+echo "!!!NOTE: Be sure to clean/rebuild your local environment as the /dist folder has been modified for deployment!!!"
 
 # Initiate zip deployment
 echo "Starting Azure deployment..."

@@ -5,7 +5,6 @@
 import { ContainerInstanceManagementClient } from "azure-arm-containerinstance";
 import { ResourceManagementClient } from "azure-arm-resource";
 import * as msrest from "ms-rest-azure";
-import uuid = require("uuid");
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
 import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingOperationCache, ContainerGroupStatus, ConfigurationDetails } from "./common-types";
@@ -192,10 +191,7 @@ export class ContainerService implements IContainerService {
             }));
 
             // Note that image may or may not specify a tag
-            let imageName = this.settings.ContainerImage;
-            if (tag) {
-                imageName = imageName + `:${tag}`;
-            }
+            let imageName = this.matchingStrategy.GetImageName(this.settings.ContainerImage, tag);
 
             const matched = groupStatus.some((details) => {
                 const isMatch = this.matchingStrategy.IsMatch(details,
@@ -205,15 +201,8 @@ export class ContainerService implements IContainerService {
                     pendingOps);
 
                 if (isMatch) {
-
-                    // Check to see if the instance was terminated - we'll need to adjust 
-                    // how we start downstream.
-                    if ((details.instanceView!.state) &&
-                        (details.instanceView!.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
-                        matchInfo.WasTerminated = true;
-                    }
-
                     // Capture remaining details
+                    matchInfo.WasTerminated = this.matchingStrategy.IsTerminated(details);
                     matchInfo.Name = details.name!;
                     matchInfo.Group = details;
                 }
@@ -222,8 +211,7 @@ export class ContainerService implements IContainerService {
 
             // No matches found - create a new deployment name
             if (!matched) {
-                const uniq = uuid().substr(-12);
-                matchInfo.Name = `aci-inst-${uniq}`;
+                matchInfo.Name = this.matchingStrategy.GetNewDeploymentName();
             }
 
             // Tack the matched instances as "off limits", so the next caller 
@@ -258,15 +246,10 @@ export class ContainerService implements IContainerService {
     }
 
     private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, tag: string | undefined) {
-        // Note that tag is optional, but may be specified.
-        let imageName = this.settings.ContainerImage;
-        if (tag) {
-            imageName = imageName + `:${tag}`;
-        }
         return {
             containers: [{
                 name: "default-container",
-                image: imageName,
+                image: this.matchingStrategy.GetImageName(this.settings.ContainerImage, tag),
                 ports: [{
                     port: this.settings.ContainerPort
                 }],

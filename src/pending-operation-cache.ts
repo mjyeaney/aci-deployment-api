@@ -25,28 +25,76 @@ export class PendingOperationCache implements IPendingOperationCache {
     }
 
     public async AddPendingOperation(name: string): Promise<void> {
+        let acquiredLock: boolean = false;
+
         this.logger.Write(`Adding pending deployment named ${name}...`);
+
         return new Promise<void>(async (resolve, reject) => {
-            await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
-            const names = this.readSync();
-            names.push(name);
-            this.flushSync(names);
-            lockfile.unlockSync(this.SYNC_ROOT_FILE_PATH);
-            resolve();
+            try {
+                await this.LockStore();
+                acquiredLock = true;
+                const names = this.readSync();
+                const index = names.indexOf(name);
+
+                if (index > -1){
+                    throw new Error("Cannot add duplicate operation name.");
+                } else {
+                    names.push(name);
+                    this.flushSync(names);
+                }
+
+                resolve();
+            }
+            catch (err) {
+                this.logger.Write(JSON.stringify(err));
+                reject(err);
+            }
+            finally {
+                if (acquiredLock){
+                    await this.UnlockStore();
+                }
+            }
         });
     }
     
     public async RemovePendingOperation(name: string): Promise<void> {
+        let acquiredLock: boolean = false;
+
         this.logger.Write(`Removing pending deployment named ${name}...`);
+
         return new Promise<void>(async (resolve, reject) => {
-            await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
-            const names = this.readSync();
-            const index = names.indexOf(name);
-            names.splice(index, 1);
-            this.flushSync(names);
-            lockfile.unlockSync(this.SYNC_ROOT_FILE_PATH);
-            resolve();
+            try {
+                await this.LockStore();
+                acquiredLock = true;
+                const names = this.readSync();
+                const index = names.indexOf(name);
+
+                // If not found, nothing to do
+                if (index > -1) {
+                    names.splice(index, 1);
+                    this.flushSync(names);
+                }
+
+                resolve();
+            }
+            catch (err) {
+                this.logger.Write(JSON.stringify(err));
+                reject(err);
+            }
+            finally {
+                if (acquiredLock){
+                    await this.UnlockStore();
+                }
+            }
         });
+    }
+
+    public async LockStore(numRetries: number = 5): Promise<() => Promise<void>> {
+        return lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: numRetries})
+    }
+
+    public async UnlockStore(): Promise<void> {
+        return lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
     }
 
     private flushSync(names: string[]) : void {

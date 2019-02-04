@@ -5,8 +5,22 @@
 
 import { IGroupMatchingStrategy, ContainerGroupStatus } from "./common-types";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import uuid = require("uuid");
 
 export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
+
+    public GetNewDeploymentName(): string {
+        const uniq = uuid().substr(-12);
+        return `aci-inst-${uniq}`;
+    }
+
+    public GetImageName(baseImage: string, tagName: string | undefined): string {
+        let imageName = baseImage;
+        if (tagName) {
+            imageName = `${baseImage}:${tagName}`;
+        }
+        return imageName;
+    }
 
     public IsMatch(instance: ContainerGroup,
         numCpu: number,
@@ -35,6 +49,14 @@ export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
         }
 
         // Default case - no match found
+        return false;
+    }
+
+    public IsTerminated(instance: ContainerGroup): boolean {
+        if ((instance.instanceView!.state) &&
+            (instance.instanceView!.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
+            return true;
+        }
         return false;
     }
 }

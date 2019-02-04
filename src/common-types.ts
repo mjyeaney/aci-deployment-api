@@ -3,7 +3,7 @@
 // Mostly used for REST api contracts.
 //
 
-import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { ContainerGroupListResult, ContainerGroup, Container } from "azure-arm-containerinstance/lib/models";
 
 export interface ILogger {
     Write(message: string): void;
@@ -20,11 +20,14 @@ export interface IContainerService {
 }
 
 export interface IGroupMatchingStrategy {
+    GetNewDeploymentName(): string;
+    GetImageName(baseImage: string, tagName: string | undefined): string;
     IsMatch(instance: ContainerGroup,
         numCpu: number,
         memoryInGB: number,
         imageName: string,
         pendingOperations: string[]): boolean;
+    IsTerminated(instance: ContainerGroup): boolean;
 }
 
 export class GroupMatchInformation {
@@ -37,6 +40,8 @@ export interface IPendingOperationCache {
     GetPendingOperations(): Promise<string[]>;
     AddPendingOperation(name: string): Promise<void>;
     RemovePendingOperation(name: string): Promise<void>;
+    LockStore(numRetries: number): Promise<() => Promise<void>>;
+    UnlockStore(): Promise<void>;
 }
 
 export interface IReportingService {

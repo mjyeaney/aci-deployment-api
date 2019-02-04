@@ -13,54 +13,18 @@ import { ConsoleLogger } from "../logging";
 dotenv.config();
 
 const consoleLogger = new ConsoleLogger();
+const pendingCache = new PendingOperationCache(consoleLogger);
 
 const sut = new ContainerService(consoleLogger,
     new ConfigurationService(),
     new DefaultMatchingStrategy(),
-    new PendingOperationCache(consoleLogger));
+    pendingCache);
 
 describe("Container Services", () => {
-    it("Initial state has zero deployments", async () => {
-        return sut.GetDeployments()
-            .then((list) => {
-                assert.equal(list.length, 0);
-            });
-    });
+    // Does not allow concurrent creation of the same deployment
+    // 1. Create sample matching strategy that never finds a match, but always uses the same name
 
-    it("Intial call to get full details returns zero results", async () => {
-        return sut.GetFullConatinerDetails()
-            .then((results) => {
-                assert.equal(results.length, 0);
-            });
-    });
+    // If no container tag specified, none is appended to image name
 
-    it("Get details on non-existing deployment fails", async () => {
-        return sut.GetDeployment("fred")
-            .then((deployment) => {
-                assert.fail();
-            })
-            .catch((err) => {
-                assert.ok(err);
-            });
-    });
-
-    it("Deleting a non-existing deployment fails", async () => {
-        return sut.DeleteDeployment("fred")
-            .then(() => {
-                assert.fail();
-            })
-            .catch((err) => {
-                assert.ok(err);
-            });
-    });
-
-    it("Stopping a non-existing deployment fails", async () => {
-        return sut.StopDeployment("fred")
-            .then(() => {
-                assert.fail();
-            })
-            .catch((err) => {
-                assert.ok(err);
-            });
-    });
+    // Looks for existing deployments to re-use during creation
 });
