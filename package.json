@@ -13,7 +13,7 @@
     "bump-asset-vers": "cat ./dist/static/index.html | sed -e 's/?ver=TIMESTAMP/?ver='\"$(date +%s)\"'/' > ./dist/static/index.html",
     "start": "cp ./.env ./dist && cd ./dist && node server.js",
     "deploy": ". ./deploy/azure-zip-deploy.sh",
-    "test": "./node_modules/mocha/bin/mocha ./dist/tests --timeout 10000"
+    "test": "cp ./.env ./dist && cd ./dist && ../node_modules/mocha/bin/mocha ./tests --timeout 10000"
   },
   "author": "Mike Yeaney",
   "license": "MIT",
