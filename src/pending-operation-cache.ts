@@ -89,7 +89,7 @@ export class PendingOperationCache implements IPendingOperationCache {
         });
     }
 
-    public async LockStore(numRetries: number = 5): Promise<() => Promise<void>> {
+    public async LockStore(numRetries: number = 1): Promise<() => Promise<void>> {
         return lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: numRetries})
     }
 

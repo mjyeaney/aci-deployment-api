@@ -4,7 +4,7 @@
 
 import * as dotenv from "dotenv";
 import { before } from "mocha";
-import { IPendingOperationCache, ContainerGroupGridRow } from "../common-types";
+import { IPendingOperationCache } from "../common-types";
 import { PendingOperationCache } from "../pending-operation-cache";
 import { ConsoleLogger } from "../logging";
 import * as assert from "assert";
