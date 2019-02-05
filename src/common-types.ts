@@ -40,7 +40,7 @@ export interface IPendingOperationCache {
     GetPendingOperations(): Promise<string[]>;
     AddPendingOperation(name: string): Promise<void>;
     RemovePendingOperation(name: string): Promise<void>;
-    LockStore(numRetries: number): Promise<() => Promise<void>>;
+    LockStore(): Promise<() => Promise<void>>;
     UnlockStore(): Promise<void>;
 }
 
