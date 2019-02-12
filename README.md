@@ -44,7 +44,7 @@ Note that on Azure AppServices environments, this folder should be the root of t
 
 ### Deployment
 
-The application is designed to work on Azure AppService, and there are deployment scripts in the `deploy` folder. Modify these as needed for your particular environemnt. Note that there are some long-running background jobs (~4 hours, located in `/src/cleanup-tasks.ts` which require ensuring the WebApp is set to `AlwaysOn`).
+The application is designed to be deployed as a Web App on Azure AppService (see "[Why AppService?](#Why-App-Service)" below) using the scripts in the `deploy` folder. Modify these as needed for your particular environemnt. Note that there are some long-running background jobs (~4 hours, located in `/src/cleanup-tasks.ts` which require ensuring the WebApp is set to `AlwaysOn`).
 
 Note that the following environment variables will need set in order for the application to run. 
 
@@ -70,6 +70,12 @@ CONTAINER_REGISTRY_PASSWORD=
 ```
 
 For local development, you may place a `.env` file in your root folder to set these variables.
+
+### Why App Service?
+
+This specific project was intentionally deployed as a single Web App to help facilitate simple deployments for teams new to Azure. However, it is a logical next step to decompose the appliction into a more microservice-based approach, likely using Function, API Management, and a coordinating store (such as Redis). 
+
+Note however, that the deployment will necessarily need to be more complicated, and definitely has more moving parts. This needs careful consideration, as it will have impact on the team(s) that will be deploying, developing, and maintaining the solution.
 
 ### Future Work
 
