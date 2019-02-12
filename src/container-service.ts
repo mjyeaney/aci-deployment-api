@@ -126,26 +126,20 @@ export class ContainerService implements IContainerService {
                     return this.GetMatchingGroupInfo(numCpu, memoryInGB, tag);
                 })
                 .then(async (matchInfo: GroupMatchInformation) => {
-                    //
-                    // Two cases here: One, if no match was found, we need to kick off a new deployment.
-                    // Second, if a match was found, we are either starting or re-starting, depending on 
-                    // how the instance exited.
-                    //
-                    if (!matchInfo.Group) {
-                        this.logger.Write("Starting new container group deployment (no match found)...");
-                        matchInfo.Group = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.settings.ResourceGroup,
-                            matchInfo.Name,
-                            this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name, tag));
-                    } else {
-                        this.logger.Write("Starting existing container group (match found)...");
-                        if (matchInfo.WasTerminated) {
-                            this.logger.Write("Re-starting due to termination...");
-                            await this.aciClient!.containerGroups.restart(this.settings.ResourceGroup, matchInfo.Name);
-                        } else {
-                            await this.aciClient!.containerGroups.start(this.settings.ResourceGroup, matchInfo.Name);
+                    return this.groupStrategy.InvokeCreationDelegate(
+                        matchInfo, 
+                        () => {
+                            return this.aciClient!.containerGroups.beginCreateOrUpdate(this.settings.ResourceGroup,
+                                matchInfo.Name,
+                                this.getContainerGroupDescription(memoryInGB, numCpu, matchInfo.Name, tag));
+                        }, 
+                        () => {
+                            return this.aciClient!.containerGroups.start(this.settings.ResourceGroup, matchInfo.Name);
+                        },
+                        () => {
+                            return this.aciClient!.containerGroups.restart(this.settings.ResourceGroup, matchInfo.Name);
                         }
-                    }
-                    return matchInfo.Group;
+                    );
                 })
                 .then(async (result: ContainerGroup) => {
                     await this.pendingCache.RemovePendingOperation(result.name!);

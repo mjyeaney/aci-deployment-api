@@ -5,16 +5,20 @@
 import * as dotenv from "dotenv";
 import { before } from "mocha";
 import * as assert from "assert";
-import { IGroupStrategy } from "../common-types";
+import { IGroupStrategy, GroupMatchInformation } from "../common-types";
 import { DefaultGroupStrategy } from "../default-group-strategy";
+import { ConsoleLogger } from "../logging";
+import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { resolve } from "path";
 
 dotenv.config();
 
 describe("Default Matching Strategy methods", () => {
     let sut: IGroupStrategy | undefined;
+    const logger = new ConsoleLogger();
 
     before(() => {
-        sut = new DefaultGroupStrategy();
+        sut = new DefaultGroupStrategy(logger);
     });
 
     it("Builds image name with tag if specified", () => {
@@ -200,5 +204,113 @@ describe("Default Matching Strategy methods", () => {
 
         let isMatch: boolean = sut!.IsMatch(fakeGroup, 2, 2, "microsoft/aci-helloworld", ["test-deployment"]);
         assert.equal(isMatch, false);
+    });
+
+    it("Creates a new instance if no match is found", () => {
+        let createCalled = false;
+        let startCalled = false;
+        let restartCalled = false;
+        let matchInfo = new GroupMatchInformation();
+
+        matchInfo.Group = undefined;
+        matchInfo.Name = "foo";
+        matchInfo.WasTerminated = false;
+
+        sut!.InvokeCreationDelegate(matchInfo, 
+            () => {
+                return new Promise<ContainerGroup>((resolve) => {
+                    createCalled = true;
+                    resolve();            
+                })
+            },
+            () => {
+                return new Promise<void>((resolve) => {
+                    startCalled = true;
+                    resolve();
+                });
+            },
+            () => {
+                return new Promise<void>((resolve) => {
+                    restartCalled = true;
+                    resolve();
+                });
+            }
+        );
+
+        assert.equal(createCalled, true);
+        assert.equal(startCalled, false);
+        assert.equal(restartCalled, false);
+    });
+
+    it("Starts an existing group if a match is found that wasn't termintated", () => {
+        let createCalled = false;
+        let startCalled = false;
+        let restartCalled = false;
+        let matchInfo = new GroupMatchInformation();
+
+        matchInfo.Group = {} as ContainerGroup;
+        matchInfo.Name = "foo";
+        matchInfo.WasTerminated = false;
+
+        sut!.InvokeCreationDelegate(matchInfo, 
+            () => {
+                return new Promise<ContainerGroup>((resolve) => {
+                    createCalled = true;
+                    resolve();            
+                })
+            },
+            () => {
+                return new Promise<void>((resolve) => {
+                    startCalled = true;
+                    resolve();
+                });
+            },
+            () => {
+                return new Promise<void>((resolve) => {
+                    restartCalled = true;
+                    resolve();
+                });
+            }
+        );
+
+        assert.equal(createCalled, false);
+        assert.equal(startCalled, true);
+        assert.equal(restartCalled, false);
+    });
+
+    it("Restarts an existing group if a match is found that was terminated", () => {
+        let createCalled = false;
+        let startCalled = false;
+        let restartCalled = false;
+        let matchInfo = new GroupMatchInformation();
+
+        matchInfo.Group = {} as ContainerGroup;
+        matchInfo.Name = "foo";
+        matchInfo.WasTerminated = true;
+
+        sut!.InvokeCreationDelegate(matchInfo, 
+            () => {
+                return new Promise<ContainerGroup>((resolve) => {
+                    createCalled = true;
+                    resolve();            
+                })
+            },
+            () => {
+                return new Promise<void>((resolve) => {
+                    startCalled = true;
+                    resolve();
+                });
+            },
+            () => {
+                return new Promise<void>((resolve) => {
+                    restartCalled = true;
+                    resolve();
+                });
+            }
+        );
+
+        assert.equal(createCalled, false);
+        assert.equal(startCalled, false);
+        assert.equal(restartCalled, true);
     });
 });

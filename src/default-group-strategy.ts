@@ -3,11 +3,16 @@
 // matches the specified resource description
 //
 
-import { IGroupStrategy, ContainerGroupStatus } from "./common-types";
+import { IGroupStrategy, ContainerGroupStatus, GroupMatchInformation, ILogger } from "./common-types";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import uuid = require("uuid");
 
 export class DefaultGroupStrategy implements IGroupStrategy {
+    private readonly logger: ILogger;
+
+    constructor(logger: ILogger){
+        this.logger = logger;
+    }
 
     public GetNewDeploymentName(): string {
         const uniq = uuid().substr(-12);
@@ -58,5 +63,33 @@ export class DefaultGroupStrategy implements IGroupStrategy {
             return true;
         }
         return false;
+    }
+
+    public async InvokeCreationDelegate(matchInfo: GroupMatchInformation, 
+        create: () => Promise<ContainerGroup>, 
+        start: () => Promise<any>, 
+        restart: () => Promise<any>): Promise<ContainerGroup> {
+            
+        //
+        // Two cases here: One, if no match was found, we need to kick off a new deployment.
+        // Second, if a match was found, we are either starting or re-starting, depending on 
+        // how the instance exited.
+        //
+
+        // Select appropriate creation callback
+        if (!matchInfo.Group) {
+            this.logger.Write("Starting new container group deployment (no match found)...");
+            return await create();
+        } else {
+            if (matchInfo.WasTerminated) {
+                this.logger.Write("Re-starting container group due to termination (match found)...");
+                await restart();
+                return matchInfo.Group;
+            } else {
+                this.logger.Write("Starting existing container group (match found)...");
+                await start();
+                return matchInfo.Group;
+            }
+        }
     }
 }

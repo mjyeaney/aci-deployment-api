@@ -21,13 +21,21 @@ export interface IContainerService {
 
 export interface IGroupStrategy {
     GetNewDeploymentName(): string;
+
     GetImageName(baseImage: string, tagName: string | undefined): string;
+
     IsMatch(instance: ContainerGroup,
         numCpu: number,
         memoryInGB: number,
         imageName: string,
         pendingOperations: string[]): boolean;
+
     IsTerminated(instance: ContainerGroup): boolean;
+
+    InvokeCreationDelegate(matchInfo: GroupMatchInformation,
+        create: () => Promise<ContainerGroup>,
+        start: () => Promise<void>,
+        restart: () => Promise<any>): Promise<ContainerGroup>;
 }
 
 export class GroupMatchInformation {
