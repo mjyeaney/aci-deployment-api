@@ -19,7 +19,7 @@ export interface IContainerService {
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
 }
 
-export interface IGroupMatchingStrategy {
+export interface IGroupStrategy {
     GetNewDeploymentName(): string;
     GetImageName(baseImage: string, tagName: string | undefined): string;
     IsMatch(instance: ContainerGroup,

@@ -3,11 +3,11 @@
 // matches the specified resource description
 //
 
-import { IGroupMatchingStrategy, ContainerGroupStatus } from "./common-types";
+import { IGroupStrategy, ContainerGroupStatus } from "./common-types";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import uuid = require("uuid");
 
-export class DefaultMatchingStrategy implements IGroupMatchingStrategy {
+export class DefaultGroupStrategy implements IGroupStrategy {
 
     public GetNewDeploymentName(): string {
         const uniq = uuid().substr(-12);

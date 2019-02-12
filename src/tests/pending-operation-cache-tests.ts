@@ -67,23 +67,4 @@ describe("Pending Operation Cache", () => {
                 }
             });
     });
-
-    // it("Does not allow concurrent access to underlying store", async () => {
-    //     let failed: boolean = false;
-        
-    //     return sut!.LockStore()
-    //         .then(() => {
-    //             return sut!.AddPendingOperation("test1");
-    //         })
-    //         .catch(() => {
-    //             failed = true;
-    //         })
-    //         .finally(() => {
-    //             sut!.UnlockStore();
-
-    //             if (!failed) {
-    //                 assert.fail();
-    //             }
-    //         });
-    // });
 });

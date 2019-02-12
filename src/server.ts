@@ -1,14 +1,14 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, GroupMatchInformation, IPendingOperationCache, IGroupMatchingStrategy, IContainerService, IReportingService } from "./common-types";
+import { ILogger, GroupMatchInformation, IPendingOperationCache, IGroupStrategy, IContainerService, IReportingService } from "./common-types";
 import { ConsoleLogger } from "./logging";
 import { ContainerService }  from "./container-service";
 import { ReportingService }  from "./reporting-service";
 import { ConfigurationService, IConfigService } from "./config-service";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import { PendingOperationCache } from "./pending-operation-cache";
-import { DefaultMatchingStrategy } from "./default-matching-strategy";
+import { DefaultGroupStrategy } from "./default-group-strategy";
 import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanup-tasks";
 
 // Init environment
@@ -19,8 +19,8 @@ const logger: ILogger = new ConsoleLogger();
 const config: IConfigService = new ConfigurationService();
 const app: express.Application = express();
 const pendingCache: IPendingOperationCache = new PendingOperationCache(logger);
-const matchStrategy: IGroupMatchingStrategy = new DefaultMatchingStrategy();
-const aci: IContainerService = new ContainerService(logger, config, matchStrategy, pendingCache);
+const groupStrategy: IGroupStrategy = new DefaultGroupStrategy();
+const aci: IContainerService = new ContainerService(logger, config, groupStrategy, pendingCache);
 const reporting: IReportingService = new ReportingService(logger, config, aci);
 const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, pendingCache, aci);
 

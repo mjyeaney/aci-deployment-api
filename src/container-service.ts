@@ -7,7 +7,7 @@ import { ResourceManagementClient } from "azure-arm-resource";
 import * as msrest from "ms-rest-azure";
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-import { ILogger, IContainerService, GroupMatchInformation, IGroupMatchingStrategy, IPendingOperationCache, ContainerGroupStatus, ConfigurationDetails } from "./common-types";
+import { ILogger, IContainerService, GroupMatchInformation, IGroupStrategy, IPendingOperationCache, ContainerGroupStatus, ConfigurationDetails } from "./common-types";
 import { IConfigService } from "./config-service";
 
 export class ContainerService implements IContainerService {
@@ -16,14 +16,14 @@ export class ContainerService implements IContainerService {
     private readonly logger: ILogger;
     private readonly settings: ConfigurationDetails;
     private readonly pendingCache: IPendingOperationCache;
-    private readonly matchingStrategy: IGroupMatchingStrategy;
+    private readonly groupStrategy: IGroupStrategy;
     private aciClient: ContainerInstanceManagementClient | undefined;
     private armClient: ResourceManagementClient.default | undefined;
 
-    constructor(logger: ILogger, config: IConfigService, matchingStrategy: IGroupMatchingStrategy, pendingCache: IPendingOperationCache) {
+    constructor(logger: ILogger, config: IConfigService, groupStrategy: IGroupStrategy, pendingCache: IPendingOperationCache) {
         this.logger = logger;
         this.settings = config.GetConfiguration();
-        this.matchingStrategy = matchingStrategy;
+        this.groupStrategy = groupStrategy;
         this.pendingCache = pendingCache;
     }
 
@@ -191,10 +191,10 @@ export class ContainerService implements IContainerService {
             }));
 
             // Note that image may or may not specify a tag
-            let imageName = this.matchingStrategy.GetImageName(this.settings.ContainerImage, tag);
+            let imageName = this.groupStrategy.GetImageName(this.settings.ContainerImage, tag);
 
             const matched = groupStatus.some((details) => {
-                const isMatch = this.matchingStrategy.IsMatch(details,
+                const isMatch = this.groupStrategy.IsMatch(details,
                     numCpu,
                     memoryInGB,
                     imageName,
@@ -202,7 +202,7 @@ export class ContainerService implements IContainerService {
 
                 if (isMatch) {
                     // Capture remaining details
-                    matchInfo.WasTerminated = this.matchingStrategy.IsTerminated(details);
+                    matchInfo.WasTerminated = this.groupStrategy.IsTerminated(details);
                     matchInfo.Name = details.name!;
                     matchInfo.Group = details;
                 }
@@ -211,7 +211,7 @@ export class ContainerService implements IContainerService {
 
             // No matches found - create a new deployment name
             if (!matched) {
-                matchInfo.Name = this.matchingStrategy.GetNewDeploymentName();
+                matchInfo.Name = this.groupStrategy.GetNewDeploymentName();
             }
 
             // Tack the matched instances as "off limits", so the next caller 
@@ -249,7 +249,7 @@ export class ContainerService implements IContainerService {
         return {
             containers: [{
                 name: "default-container",
-                image: this.matchingStrategy.GetImageName(this.settings.ContainerImage, tag),
+                image: this.groupStrategy.GetImageName(this.settings.ContainerImage, tag),
                 ports: [{
                     port: this.settings.ContainerPort
                 }],

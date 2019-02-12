@@ -5,17 +5,16 @@
 import * as dotenv from "dotenv";
 import { before } from "mocha";
 import * as assert from "assert";
-import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
-import { IGroupMatchingStrategy } from "../common-types";
-import { DefaultMatchingStrategy } from "../default-matching-strategy";
+import { IGroupStrategy } from "../common-types";
+import { DefaultGroupStrategy } from "../default-group-strategy";
 
 dotenv.config();
 
 describe("Default Matching Strategy methods", () => {
-    let sut: IGroupMatchingStrategy | undefined;
+    let sut: IGroupStrategy | undefined;
 
     before(() => {
-        sut = new DefaultMatchingStrategy();
+        sut = new DefaultGroupStrategy();
     });
 
     it("Builds image name with tag if specified", () => {
