@@ -12,6 +12,7 @@
     "copy-assets": "rm -rf ./dist/static && cp -r ./src/static ./dist",
     "bump-asset-vers": "cat ./dist/static/index.html | sed -e 's/?ver=TIMESTAMP/?ver='\"$(date +%s)\"'/' > ./dist/static/index.html",
     "start": "cp ./.env ./dist && cd ./dist && node server.js",
+    "build-deploy-zip": ". ./deploy/azure-zip-build.sh",
     "deploy": ". ./deploy/azure-zip-deploy.sh",
     "test": "cd ./dist && ../node_modules/mocha/bin/mocha ./tests --timeout 60000"
   },
