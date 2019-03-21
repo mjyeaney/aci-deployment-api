@@ -32,5 +32,6 @@ az webapp config appsettings set -g $resource_group_name -n $webapp_name --setti
 az webapp auth update  -g $resource_group_name -n $webapp_name --enabled true \
                           --action LoginWithAzureActiveDirectory \
                           --aad-allowed-token-audiences https://webapp_name.azurewebsites.net \
-                          --aad-client-id TODO --aad-client-secret TODO \
+                          --aad-client-id TODO \
+                          --aad-client-secret TODO \
                           --aad-token-issuer-url https://sts.windows.net/aad_tenant_id/

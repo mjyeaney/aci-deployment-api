@@ -84,32 +84,31 @@ export class PurgeUnusedDeployments implements ICleanupTask {
         // Find any that are stopped or terminated, that have no updates for 10 mins
         for (let c of containerGroups){
 
-            if (c.instanceView!.state){
-                if ((c.instanceView!.state!.toLowerCase() === ContainerGroupStatus.Stopped) ||
-                    (c.instanceView!.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
+            let currentState = c.containers[0]!.instanceView!.currentState!;
 
-                    this.logger.Write(`Found instance candidate for removal: ${c.name}`);
+            if ((currentState.state!.toLowerCase() === ContainerGroupStatus.Stopped) ||
+                (currentState.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
 
-                    // Found a candidate deployment - check last update
-                    let lastUpdate = c.containers[0]!.instanceView!.currentState!.finishTime;
+                this.logger.Write(`Found instance candidate for removal: ${c.name}`);
 
-                    // Finish time may be null; if so, revert to start time
-                    if (!lastUpdate){
-                        lastUpdate = c.containers[0]!.instanceView!.currentState!.startTime;
-                    }
+                // Found a candidate deployment - check last update
+                let lastUpdate = currentState.finishTime;
 
-                    let diff = moment().diff(moment(lastUpdate));
-                    let duration = moment.duration(diff).asHours();
+                // Finish time may be null; if so, revert to start time
+                if (!lastUpdate){
+                    lastUpdate = currentState.startTime;
+                }
 
-                    this.logger.Write(`Instance last update: ${duration} hours ago`);
+                let diff = moment().diff(moment(lastUpdate));
+                let duration = moment.duration(diff).asHours();
 
-                    if (duration >= 4){
-                        await this.pendingOps.AddPendingOperation(c.name!);
-                        itemsToRemove.push(c);
-                    }
+                this.logger.Write(`Instance last update: ${duration} hours ago`);
+
+                if (duration >= 4){
+                    await this.pendingOps.AddPendingOperation(c.name!);
+                    itemsToRemove.push(c);
                 }
             }
-
         }
 
         // Delete these resources
