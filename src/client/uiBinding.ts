@@ -4,8 +4,8 @@
 
 import * as $ from "jquery";
 import { IChart, LineChart } from "./charting";
-import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../common-types";
-import { DeploymentsGrid } from "./deployments-grid";
+import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../commonTypes";
+import { DeploymentsGrid } from "./deploymentsGrid";
 
 export interface IUiBinding
 {

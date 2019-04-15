@@ -4,7 +4,7 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ContainerGroupStatus, IPendingOperationStore } from "./common-types";
+import { ILogger, IContainerService, ContainerGroupStatus, IPendingOperationStore } from "./commonTypes";
 import * as moment from "moment";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 

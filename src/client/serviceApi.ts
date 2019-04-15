@@ -4,7 +4,7 @@
 // NOTE: The UI manipulatino needs fatored out of here..just copy/pasta'd for now.
 //
 
-import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../common-types";
+import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../commonTypes";
 
 export interface IServiceApi {
     LoadAuthInfo(): Promise<AuthInfo>;

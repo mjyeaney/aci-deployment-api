@@ -1,9 +1,9 @@
 //
 // Provides operations over a pool of resources
 //
-import { IContainerService } from "../common-types";
-import { IConfigService } from "../ConfigService";
-import { IPoolStateStore } from "./PoolStateStore";
+import { IContainerService } from "../commonTypes";
+import { IConfigurationService } from "../configService";
+import { IPoolStateStore } from "./poolStateStore";
 
 interface IContainerInstancePool {
     GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<string>
@@ -13,9 +13,9 @@ interface IContainerInstancePool {
 export class ContainerInstancePool implements IContainerInstancePool {
     private poolStateStore: IPoolStateStore;
     private containerService: IContainerService;
-    private configService: IConfigService;
+    private configService: IConfigurationService;
 
-    constructor(poolStateStore: IPoolStateStore, containerService: IContainerService, configService: IConfigService) {
+    constructor(poolStateStore: IPoolStateStore, containerService: IContainerService, configService: IConfigurationService) {
         this.poolStateStore = poolStateStore;
         this.containerService = containerService;
         this.configService = configService;
@@ -33,12 +33,16 @@ export class ContainerInstancePool implements IContainerInstancePool {
 
             // 2.   If len(config) > 0, verify that saved state matches deployed state
             if (n > 0){
-                // TODO:
+                // TODO: Make sure total count of running equals memberID count, and that sets are equal
             }
 
             // 3.   If len(config) = 0, create a new instance up to the min size defined in POOL_MINIMUM_SIZE
             if (n === 0){
-                // TODO
+                for (let j = 0; j < config.PoolMinimumSize; j++){
+                    // TODO: What spec to initialize with? Guessing with 2x2 for now
+                    let newMember = await this.containerService.CreateNewDeployment(2, 2, undefined);
+                    await this.poolStateStore.AddMemberID(newMember.id!, false);
+                }
             }
         });
     }
@@ -66,8 +70,9 @@ export class ContainerInstancePool implements IContainerInstancePool {
 
                 // 5.	If N < POOL_MINIMUM_SIZE and N > 0
                 //    a.	Return first running CI (L[0]), and mark as in-use.
-                //    b.	QUESTION: Should this trigger a background creation to fill empty slot?
+                //    b.	Trigger a background creation to fill empty slot
                 if ((n < config.PoolMinimumSize) && (n > 0)){
+                    this.containerService.CreateNewDeployment(numCpu, memoryInGB, tag);
                     resolve(runningIDs[0]);
                 }
 

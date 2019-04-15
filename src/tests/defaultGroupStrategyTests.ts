@@ -5,8 +5,8 @@
 import * as dotenv from "dotenv";
 import { before } from "mocha";
 import * as assert from "assert";
-import { IGroupStrategy, GroupMatchInformation } from "../common-types";
-import { DefaultGroupStrategy } from "../default-group-strategy";
+import { IGroupStrategy, GroupMatchInformation } from "../commonTypes";
+import { DefaultGroupStrategy } from "../defaultGroupStrategy";
 import { ConsoleLogger } from "../logging";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import { resolve } from "path";

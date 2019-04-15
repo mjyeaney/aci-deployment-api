@@ -2,8 +2,8 @@
 // Provides serivces for generating and reading overview summary status
 //
 import * as moment from "moment";
-import { OverviewDetails, SequenceSummary, IContainerService, ILogger, IReportingService, ContainerGroupStatus } from "./common-types";
-import { IConfigService } from "./ConfigService";
+import { OverviewDetails, SequenceSummary, IContainerService, ILogger, IReportingService, ContainerGroupStatus } from "./commonTypes";
+import { IConfigurationService } from "./configService";
 
 export class ReportingService implements IReportingService {
     private readonly logger: ILogger;
@@ -14,7 +14,7 @@ export class ReportingService implements IReportingService {
 
     private readonly MAX_SAMPLES: number = 60;
 
-    constructor(logger: ILogger, config: IConfigService, containerService: IContainerService) {
+    constructor(logger: ILogger, config: IConfigurationService, containerService: IContainerService) {
         this.logger = logger;
         this.aci = containerService;
         this.refreshIntervalConfig = config.GetConfiguration().ReportingRefreshInterval;

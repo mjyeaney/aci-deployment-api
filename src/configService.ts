@@ -2,13 +2,13 @@
 // Exposes methods for reading configuration
 //
 
-import { ConfigurationDetails } from "./common-types";
+import { ConfigurationDetails } from "./commonTypes";
 
-export interface IConfigService {
+export interface IConfigurationService {
     GetConfiguration(): ConfigurationDetails;
 }
 
-export class ConfigurationService implements IConfigService {
+export class ConfigurationService implements IConfigurationService {
     public GetConfiguration() {
         const config = new ConfigurationDetails();
         config.TenantId = process.env.TENANT_ID || "";

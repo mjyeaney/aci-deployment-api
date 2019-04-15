@@ -2,8 +2,8 @@
 // Core application orchestration logic.
 //
 
-import { IUiBinding, UiBinding } from "./ui-binding";
-import { IServiceApi, ServiceApi } from "./service-api";
+import { IUiBinding, UiBinding } from "./uiBinding";
+import { IServiceApi, ServiceApi } from "./serviceApi";
 import { LineChart } from "./charting";
 import { ConsoleLogger } from "../logging";
 

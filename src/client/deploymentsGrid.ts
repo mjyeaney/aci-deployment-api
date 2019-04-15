@@ -1,7 +1,7 @@
 //
 // Implements redering of the deployments grid for our UI
 //
-import { ContainerGroupGridRow } from "../common-types";
+import { ContainerGroupGridRow } from "../commonTypes";
 
 export class DeploymentsGrid {
     public Render(data: ContainerGroupGridRow[]) {

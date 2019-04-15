@@ -1,22 +1,22 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, GroupMatchInformation, IPendingOperationStore, IGroupStrategy, IContainerService, IReportingService } from "./common-types";
+import { ILogger, GroupMatchInformation, IPendingOperationStore, IGroupStrategy, IContainerService, IReportingService } from "./commonTypes";
 import { ConsoleLogger } from "./logging";
-import { ContainerService }  from "./container-service";
-import { ReportingService }  from "./reporting-service";
-import { ConfigurationService, IConfigService } from "./ConfigService";
+import { ContainerService }  from "./containerService";
+import { ReportingService }  from "./reportingService";
+import { ConfigurationService, IConfigurationService } from "./configService";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
-import { PendingOperationStore } from "./pending-operation-store";
-import { DefaultGroupStrategy } from "./default-group-strategy";
-import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanup-tasks";
+import { PendingOperationStore } from "./pendingOperationStore";
+import { DefaultGroupStrategy } from "./defaultGroupStrategy";
+import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanupTasks";
 
 // Init environment
 dotenv.config();
 
 // Setup services
 const logger: ILogger = new ConsoleLogger();
-const config: IConfigService = new ConfigurationService();
+const config: IConfigurationService = new ConfigurationService();
 const app: express.Application = express();
 const pendingCache: IPendingOperationStore = new PendingOperationStore(logger);
 const groupStrategy: IGroupStrategy = new DefaultGroupStrategy(logger);

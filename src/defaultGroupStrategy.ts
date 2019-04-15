@@ -3,7 +3,7 @@
 // matches the specified resource description
 //
 
-import { IGroupStrategy, ContainerGroupStatus, GroupMatchInformation, ILogger } from "./common-types";
+import { IGroupStrategy, ContainerGroupStatus, GroupMatchInformation, ILogger } from "./commonTypes";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import uuid = require("uuid");
 

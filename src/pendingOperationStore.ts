@@ -4,7 +4,7 @@
 // This is designed to write a file to and underlying replicated storage location.
 //
 
-import { ILogger, IPendingOperationStore } from "./common-types";
+import { ILogger, IPendingOperationStore } from "./commonTypes";
 import * as lockfile from "proper-lockfile";
 import * as io from "fs";
 
