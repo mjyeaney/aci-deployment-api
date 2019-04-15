@@ -24,6 +24,7 @@ export class ConfigurationService implements IConfigService {
         config.ContainerRegistryHost = process.env.CONTAINER_REGISTRY_HOST || "";
         config.ContainerRegistryUsername = process.env.CONTAINER_REGISTRY_USERNAME || "";
         config.ContainerRegistryPassword = process.env.CONTAINER_REGISTRY_PASSWORD || "";
+        config.PoolMinimumSize = parseInt(process.env.POOL_MINIMUM_SIZE || "1");
         return config;
     }
 }

@@ -7,20 +7,20 @@ import { ResourceManagementClient } from "azure-arm-resource";
 import * as msrest from "ms-rest-azure";
 import { ContainerGroupListResult, ContainerGroup, ImageRegistryCredential } from "azure-arm-containerinstance/lib/models";
 import * as lockfile from "proper-lockfile";
-import { ILogger, IContainerService, GroupMatchInformation, IGroupStrategy, IPendingOperationCache, ContainerGroupStatus, ConfigurationDetails } from "./common-types";
-import { IConfigService } from "./config-service";
+import { ILogger, IContainerService, GroupMatchInformation, IGroupStrategy, IPendingOperationStore, ContainerGroupStatus, ConfigurationDetails } from "./common-types";
+import { IConfigService } from "./ConfigService";
 
 export class ContainerService implements IContainerService {
     private readonly SYNC_ROOT_FILE_PATH: string = "./data/aci.lock";
 
     private readonly logger: ILogger;
     private readonly settings: ConfigurationDetails;
-    private readonly pendingCache: IPendingOperationCache;
+    private readonly pendingCache: IPendingOperationStore;
     private readonly groupStrategy: IGroupStrategy;
     private aciClient: ContainerInstanceManagementClient | undefined;
     private armClient: ResourceManagementClient.default | undefined;
 
-    constructor(logger: ILogger, config: IConfigService, groupStrategy: IGroupStrategy, pendingCache: IPendingOperationCache) {
+    constructor(logger: ILogger, config: IConfigService, groupStrategy: IGroupStrategy, pendingCache: IPendingOperationStore) {
         this.logger = logger;
         this.settings = config.GetConfiguration();
         this.groupStrategy = groupStrategy;

@@ -4,7 +4,7 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ContainerGroupStatus, IPendingOperationCache } from "./common-types";
+import { ILogger, IContainerService, ContainerGroupStatus, IPendingOperationStore } from "./common-types";
 import * as moment from "moment";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
@@ -26,7 +26,7 @@ export class CleanupTaskRunner implements ICleanupTaskRunner {
     private readonly logger: ILogger;
     private tasks: ICleanupTask[] = [];
 
-    constructor(logger: ILogger, pendingOps: IPendingOperationCache, aci: IContainerService){
+    constructor(logger: ILogger, pendingOps: IPendingOperationStore, aci: IContainerService){
         this.logger = logger;
 
         // Add known tasks - later, we can dynamically enumerate these tasks 
@@ -57,10 +57,10 @@ export class CleanupTaskRunner implements ICleanupTaskRunner {
 
 export class PurgeUnusedDeployments implements ICleanupTask {
     private readonly aci: IContainerService;
-    private readonly pendingOps: IPendingOperationCache;
+    private readonly pendingOps: IPendingOperationStore;
     private readonly logger: ILogger;
     
-    constructor(logger: ILogger, pendingOps: IPendingOperationCache, aci: IContainerService){
+    constructor(logger: ILogger, pendingOps: IPendingOperationStore, aci: IContainerService){
         this.logger = logger;
         this.pendingOps = pendingOps
         this.aci = aci;

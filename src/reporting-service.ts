@@ -3,7 +3,7 @@
 //
 import * as moment from "moment";
 import { OverviewDetails, SequenceSummary, IContainerService, ILogger, IReportingService, ContainerGroupStatus } from "./common-types";
-import { IConfigService } from "./config-service";
+import { IConfigService } from "./ConfigService";
 
 export class ReportingService implements IReportingService {
     private readonly logger: ILogger;

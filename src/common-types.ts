@@ -3,7 +3,7 @@
 // Mostly used for REST api contracts.
 //
 
-import { ContainerGroupListResult, ContainerGroup, Container } from "azure-arm-containerinstance/lib/models";
+import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
 export interface ILogger {
     Write(message: string): void;
@@ -44,7 +44,7 @@ export class GroupMatchInformation {
     WasTerminated: boolean = false;
 }
 
-export interface IPendingOperationCache {
+export interface IPendingOperationStore {
     GetPendingOperations(): Promise<string[]>;
     AddPendingOperation(name: string): Promise<void>;
     RemovePendingOperation(name: string): Promise<void>;
@@ -98,6 +98,7 @@ export class ConfigurationDetails {
     ContainerRegistryHost: string = "";
     ContainerRegistryUsername: string = "";
     ContainerRegistryPassword: string = "";
+    PoolMinimumSize: number = 0;
 }
 
 export class ContainerGroupGridRow {

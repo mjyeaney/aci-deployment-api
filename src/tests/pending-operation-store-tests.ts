@@ -4,19 +4,19 @@
 
 import * as dotenv from "dotenv";
 import { before } from "mocha";
-import { IPendingOperationCache } from "../common-types";
-import { PendingOperationCache } from "../pending-operation-cache";
+import { IPendingOperationStore } from "../common-types";
+import { PendingOperationStore } from "../pending-operation-store";
 import { ConsoleLogger } from "../logging";
 import * as assert from "assert";
 
 dotenv.config();
 
 describe("Pending Operation Cache", () => {
-    let sut: IPendingOperationCache | undefined;
+    let sut: IPendingOperationStore | undefined;
     const logger = new ConsoleLogger();
 
     before(() => {
-        sut = new PendingOperationCache(logger);
+        sut = new PendingOperationStore(logger);
     });
 
     it("Can list operations that have been added", async () => {
