@@ -4,13 +4,14 @@
 //
 
 export interface IPoolStateStore {
-    GetMemberIDs(): Promise<Array<string>>;
+    GetMembers(): Promise<Array<PoolMember>>;
     GetFreeMemberIDs(): Promise<Array<string>>;
     GetInUseMemberIDs(): Promise<Array<string>>;
-    AddMemberID(memberId: string, inUse: boolean): Promise<void>;
+    AddMember(memberId: string, inUse: boolean): Promise<void>;
+    UpdateMember(memberId: string, inUse: boolean): Promise<void>;
 }
 
-class PoolMember {
+export class PoolMember {
     public ID: string = "";
     public InUse: boolean = false;
 }
@@ -23,13 +24,13 @@ export class PoolStateStore implements IPoolStateStore {
         this.stateStore = new Set<PoolMember>();
     }
 
-    public GetMemberIDs(): Promise<Array<string>> {
-        return new Promise<string[]>((resolve, reject) => {
+    public GetMembers(): Promise<Array<PoolMember>> {
+        return new Promise<Array<PoolMember>>((resolve, reject) => {
             try {
-                const members: string[] = [];
+                const members: Array<PoolMember> = [];
 
                 for (let member of this.stateStore){
-                    members.push(member.ID);
+                    members.push(member);
                 }
 
                 resolve(members);
@@ -75,13 +76,28 @@ export class PoolStateStore implements IPoolStateStore {
         });
     }
     
-    public AddMemberID(memberId: string, inUse: boolean): Promise<void> {
+    public AddMember(memberId: string, inUse: boolean): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             try {
                 let newMember = new PoolMember();
                 newMember.ID = memberId;
                 newMember.InUse = inUse;
                 this.stateStore.add(newMember);
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    public UpdateMember(memberId: string, inUse: boolean): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            try {
+                for (let member of this.stateStore){
+                    if (member.ID === memberId){
+                        member.InUse = inUse;
+                    }
+                }
                 resolve();
             } catch (err) {
                 reject(err);

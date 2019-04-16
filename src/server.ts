@@ -1,15 +1,17 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, GroupMatchInformation, IPendingOperationStore, IGroupStrategy, IContainerService, IReportingService } from "./commonTypes";
+import { ILogger, IPendingOperationStore, IContainerService, IReportingService } from "./commonTypes";
 import { ConsoleLogger } from "./logging";
-import { ContainerService }  from "./containerService";
-import { ReportingService }  from "./reportingService";
 import { ConfigurationService, IConfigurationService } from "./configService";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { ContainerService }  from "./containerService";
+import { ReportingService }  from "./reportingService";
 import { PendingOperationStore } from "./pendingOperationStore";
-import { DefaultGroupStrategy } from "./defaultGroupStrategy";
 import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanupTasks";
+
+import { IContainerInstancePool, ContainerInstancePool } from "./pooling/containerInstancePool";
+import { IPoolStateStore, PoolStateStore } from "./pooling/poolStateStore";
 
 // Init environment
 dotenv.config();
@@ -19,14 +21,18 @@ const logger: ILogger = new ConsoleLogger();
 const config: IConfigurationService = new ConfigurationService();
 const app: express.Application = express();
 const pendingCache: IPendingOperationStore = new PendingOperationStore(logger);
-const groupStrategy: IGroupStrategy = new DefaultGroupStrategy(logger);
-const aci: IContainerService = new ContainerService(logger, config, groupStrategy, pendingCache);
+const aci: IContainerService = new ContainerService(logger, config);
 const reporting: IReportingService = new ReportingService(logger, config, aci);
 const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, pendingCache, aci);
+
+// TESTING: Pooling 
+const poolStateStore: IPoolStateStore = new PoolStateStore();
+const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
 
 // Startup background jobs on this node
 reporting.Initialize();
 cleanupManager.ScheduleAll();
+pool.InitializePool();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
 // and JSON
@@ -48,28 +54,6 @@ const setNoCache = function(res: express.Response){
 };
 
 // 
-// Introspection API methods
-//
-app.post("/api/test/getGroupMatchInfo", async (req: express.Request, resp: express.Response) => {
-    setNoCache(resp);
-
-    aci.GetMatchingGroupInfo(req.body.numCpu, req.body.memoryInGB, req.body.tag).then((data: GroupMatchInformation) => {
-        resp.json(data);
-    }).catch((reason: any) => {
-        resp.status(500).json(reason);
-    });
-});
-app.get("/api/test/getPendingDeployments", async (req: express.Request, resp: express.Response) => {
-    setNoCache(resp);
-    
-    pendingCache.GetPendingOperations().then((names: string[]) => {
-        resp.json(names);
-    }).catch((reason: any) => {
-        resp.status(500).json(reason);
-    });
-});
-
-// 
 // Main API methods
 //
 app.get("/api/overviewSummary", async (req: express.Request, resp: express.Response) => {
@@ -82,11 +66,13 @@ app.get("/api/overviewSummary", async (req: express.Request, resp: express.Respo
         resp.status(500).json(reason);
     })
 });
+
 app.get("/api/configuration", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/configuration...");
     setNoCache(resp);
     resp.json(config.GetConfiguration());
 });
+
 app.get("/api/authinfo", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/authinfo...");
     setNoCache(resp);
@@ -107,6 +93,7 @@ app.get("/api/authinfo", async (req: express.Request, resp: express.Response) =>
         PrincipalName: userPrincipalName
     });
 });
+
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/deployments...");
     setNoCache(resp);
@@ -117,6 +104,7 @@ app.get("/api/deployments", async (req: express.Request, resp: express.Response)
         resp.status(500).json(reason);
     });
 });
+
 app.post("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing POST /api/deployments...");
     setNoCache(resp);
@@ -130,13 +118,20 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
         let numCpu = req.body.numCpu;
         let memory = req.body.memoryInGB;
 
-        aci.CreateNewDeployment(numCpu, memory, tag).then((data: ContainerGroup) => {
+        pool.GetPooledContainerInstance(numCpu, memory, tag).then((data: string) => {
             resp.json(data);
         }).catch((reason: any) => {
             resp.status(500).json(reason);
         });
+
+        // aci.CreateNewDeployment(numCpu, memory, tag).then((data: ContainerGroup) => {
+        //     resp.json(data);
+        // }).catch((reason: any) => {
+        //     resp.status(500).json(reason);
+        // });
     }
 });
+
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing GET /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
@@ -147,6 +142,7 @@ app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: exp
         resp.status(500).json(reason);
     });
 });
+
 app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/stop...`);
     setNoCache(resp);
@@ -157,6 +153,7 @@ app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, res
         resp.status(500).json(reason);
     });
 });
+
 app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing DELETE /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
@@ -169,11 +166,6 @@ app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: 
 });
 
 //
-// TODO: V2 Pooling API method surface area
-//
-
-
-//
 // Enable basic static resource support
 //
 app.use(express.static(__dirname, {
@@ -183,6 +175,6 @@ app.use(express.static(__dirname, {
 //
 // Init server listener loop
 //
-const server = app.listen(port, function () {
+app.listen(port, function () {
     logger.Write(`Server started - ready for requests`);
 });

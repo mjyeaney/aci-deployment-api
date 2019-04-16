@@ -15,33 +15,7 @@ export interface IContainerService {
     CreateNewDeployment(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>;
     StopDeployment(containerGroupName: string): Promise<void>;
     DeleteDeployment(containerGroupName: string): Promise<void>;
-    GetMatchingGroupInfo(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<GroupMatchInformation>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
-}
-
-export interface IGroupStrategy {
-    GetNewDeploymentName(): string;
-
-    GetImageName(baseImage: string, tagName: string | undefined): string;
-
-    IsMatch(instance: ContainerGroup,
-        numCpu: number,
-        memoryInGB: number,
-        imageName: string,
-        pendingOperations: string[]): boolean;
-
-    IsTerminated(instance: ContainerGroup): boolean;
-
-    InvokeCreationDelegate(matchInfo: GroupMatchInformation,
-        create: () => Promise<ContainerGroup>,
-        start: () => Promise<void>,
-        restart: () => Promise<any>): Promise<ContainerGroup>;
-}
-
-export class GroupMatchInformation {
-    Name: string = "";
-    Group: ContainerGroup | undefined = undefined;
-    WasTerminated: boolean = false;
 }
 
 export interface IPendingOperationStore {
