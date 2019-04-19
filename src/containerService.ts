@@ -131,6 +131,57 @@ export class ContainerService implements IContainerService {
         return groupStatus;
     }
 
+    public UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>{
+        return new Promise<void>(async (resolve, reject) => {
+            const start = Date.now();
+            
+            try {
+                await this.initializeArmClient();
+
+                let tagsObject: any = {};
+                tagsObject[tagName] = tagValue;
+
+                await this.armClient!.resources.updateById(deploymentResourceId, "2018-10-01", {
+                    tags: tagsObject
+                });
+
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+
+            const duration = Date.now() - start;
+            this.logger.Write(`::UpdateDeploymentTag duration: ${duration} ms`);
+        });
+    }
+
+    public GetDeploymentsByTag(tagName: string, tagValue: string): Promise<Array<string>>{
+        return new Promise<Array<string>>(async (resolve, reject) => {
+            const start = Date.now();
+            
+            try {
+                await this.initializeArmClient();
+
+                let results: Array<string> = [];
+                let resources = await this.armClient!.resources.listByResourceGroup(this.settings.ResourceGroup, 
+                    {
+                        filter: `tagName eq '${tagName}' and tagValue eq '${tagValue}'`
+                    });
+
+                resources.forEach(res => {
+                    results.push(res.id!);
+                });
+
+                resolve(results);
+            } catch (err) {
+                reject(err);
+            }
+
+            const duration = Date.now() - start;
+            this.logger.Write(`::GetDeploymentsByTag duration: ${duration} ms`);
+        });
+    }
+
     private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, tag: string | undefined) {
         let imageName = this.settings.ContainerImage;
         if (tag) {
@@ -159,7 +210,10 @@ export class ContainerService implements IContainerService {
                 type: "public",
                 dnsNameLabel: groupName
             },
-            restartPolicy: "Never"
+            restartPolicy: "Never"//,
+            // tags: {
+            //     sample: "special value"
+            // }
         };
     }
 

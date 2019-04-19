@@ -3,55 +3,27 @@
 // This allows tracking of members that are in-use / etc.
 //
 
+import { IContainerService, ILogger } from "../commonTypes";
+
 export interface IPoolStateStore {
-    GetMembers(): Promise<Array<PoolMember>>;
     GetFreeMemberIDs(): Promise<Array<string>>;
     GetInUseMemberIDs(): Promise<Array<string>>;
-    AddMember(memberId: string, inUse: boolean): Promise<void>;
     UpdateMember(memberId: string, inUse: boolean): Promise<void>;
 }
 
-export class PoolMember {
-    public ID: string = "";
-    public InUse: boolean = false;
-}
-
 export class PoolStateStore implements IPoolStateStore {
-    private stateStore: Set<PoolMember>;
+    private containerService: IContainerService;
+    private TAG_NAME: string = "ITMods-PoolStatus";
 
-    constructor() {
-        // Simple, in-memory storage for now
-        this.stateStore = new Set<PoolMember>();
-    }
-
-    public GetMembers(): Promise<Array<PoolMember>> {
-        return new Promise<Array<PoolMember>>((resolve, reject) => {
-            try {
-                const members: Array<PoolMember> = [];
-
-                for (let member of this.stateStore){
-                    members.push(member);
-                }
-
-                resolve(members);
-            } catch (err) {
-                reject(err);
-            }
-        });
+    constructor(containerService: IContainerService) {
+        this.containerService = containerService;
     }
 
     public GetFreeMemberIDs(): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
+        return new Promise<string[]>(async (resolve, reject) => {
             try {
-                const freeMembers: string[] = [];
-
-                for (let member of this.stateStore){
-                    if (!member.InUse){
-                        freeMembers.push(member.ID);
-                    }
-                }
-
-                resolve(freeMembers);
+                let deploymentNames = await this.containerService.GetDeploymentsByTag(this.TAG_NAME, "Free");
+                resolve(deploymentNames);
             } catch (err) {
                 reject(err);
             }
@@ -59,45 +31,21 @@ export class PoolStateStore implements IPoolStateStore {
     }
 
     public GetInUseMemberIDs(): Promise<Array<string>>{
-        return new Promise<string[]>((resolve, reject) => {
+        return new Promise<string[]>(async (resolve, reject) => {
             try {
-                const freeMembers: string[] = [];
-
-                for (let member of this.stateStore){
-                    if (member.InUse){
-                        freeMembers.push(member.ID);
-                    }
-                }
-
-                resolve(freeMembers);
+                let deploymentNames = await this.containerService.GetDeploymentsByTag(this.TAG_NAME, "InUse");
+                resolve(deploymentNames);
             } catch (err) {
                 reject(err);
             }
         });
     }
     
-    public AddMember(memberId: string, inUse: boolean): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            try {
-                let newMember = new PoolMember();
-                newMember.ID = memberId;
-                newMember.InUse = inUse;
-                this.stateStore.add(newMember);
-                resolve();
-            } catch (err) {
-                reject(err);
-            }
-        });
-    }
-
     public UpdateMember(memberId: string, inUse: boolean): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<void>(async (resolve, reject) => {
             try {
-                for (let member of this.stateStore){
-                    if (member.ID === memberId){
-                        member.InUse = inUse;
-                    }
-                }
+                await this.containerService.UpdateDeploymentTag(memberId, 
+                    "ITMods-PoolStatus", inUse ? "InUse" : "Free");
                 resolve();
             } catch (err) {
                 reject(err);

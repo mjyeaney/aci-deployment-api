@@ -2,12 +2,13 @@
 // Provides operations over a pool of resources
 //
 import { IContainerService, ILogger } from "../commonTypes";
+import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import { IConfigurationService } from "../configService";
 import { IPoolStateStore } from "./poolStateStore";
 
 export interface IContainerInstancePool {
-    GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<string>
-    InitializePool(): Promise<void>;
+    Initialize(): Promise<void>;
+    GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup>;
 }
 
 export class ContainerInstancePool implements IContainerInstancePool {
@@ -24,7 +25,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
     }
 
     // InitializePool
-    public async InitializePool(): Promise<void> {
+    public async Initialize(): Promise<void> {
         return new Promise<void>(async (resolve, reject) => {
             try {
                 // 0.   Read base configuration
@@ -33,29 +34,25 @@ export class ContainerInstancePool implements IContainerInstancePool {
 
                 // 1.   Load saved config of pool
                 this.logger.Write("Reading pool members...");
-                const poolState = await this.poolStateStore.GetMembers();
-                const n = poolState.length;
+                const freeMembers = await this.poolStateStore.GetFreeMemberIDs();
+                const n = freeMembers.length;
 
-                // 2.   If len(config) > 0, verify that saved state matches deployed state
-                this.logger.Write("Found saved pool members - verifying against running deployments");
-                if (n > 0){
-                    // Make sure total count of running equals memberID count, and that sets are equal
-                    let runningInstances = await this.containerService.GetDeployments();
-                    if (n !== runningInstances.length){
-                        // ERROR: Mismatch...running instances don't match DB state
-                    }
-                }
-
-                // 3.   If len(config) = 0, create a new instance up to the min size defined in POOL_MINIMUM_SIZE
-                this.logger.Write("Found no saved pool members - creating initial deployments");
-                if (n === 0){
-                    for (let j = 0; j < config.PoolMinimumSize; j++){
-                        // TODO: What spec to initialize with? Guessing with 2x2 for now
-                        this.logger.Write("Creating pool member...");
-                        let newMember = await this.containerService.CreateNewDeployment(2, 2, undefined);
-                        this.logger.Write(`Done - adding member ${newMember.id} to pool state store`);
-                        await this.poolStateStore.AddMember(newMember.id!, false);
-                    }
+                // 2. If (n < POOL_MINIMUM_SIZE), create new instances up to that size
+                this.logger.Write(`Found ${n} free members; adding pool members`);
+                const membersToCreate = config.PoolMinimumSize - n;
+                for (let j = 0; j < membersToCreate; j++){
+                    // TODO: What spec to initialize with? Guessing with 2x2 for now
+                    (async () => {
+                        try {
+                            this.logger.Write("Creating pool member...");
+                            let newMember = await this.containerService.CreateNewDeployment(2, 2, undefined);
+                            this.logger.Write(`Done - adding member ${newMember.id} to pool state store`);
+                            await this.poolStateStore.UpdateMember(newMember.id!, false);
+                        } catch (err) {
+                            this.logger.Write(`*******ERROR in Background Task*********`);
+                            this.logger.Write(err);
+                        }
+                    })();
                 }
 
                 // Done
@@ -67,8 +64,8 @@ export class ContainerInstancePool implements IContainerInstancePool {
     }
 
     // Get Pooled ContainerGgroup
-    public async GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<string> {
-        return new Promise<string>(async (resolve, reject) => {
+    public async GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup> {
+        return new Promise<ContainerGroup>(async (resolve, reject) => {
             try {
                 // 0.   Read base configuration
                 this.logger.Write("Reading base configuration...");
@@ -86,24 +83,27 @@ export class ContainerInstancePool implements IContainerInstancePool {
 
                 // 4.	If N >= POOL_MINIMUM_SIZE
                 //    a.	Return first running CI (L[0]), and mark as in-use.
-                if (n >= config.PoolMinimumSize){
+                if (n > config.PoolMinimumSize){
                     this.logger.Write("Found available member! Returning available instance.");
                     let candidateId = runningIDs[0];
                     await this.poolStateStore.UpdateMember(candidateId, true);
-                    resolve(candidateId);
+                    let containerGroup = await this.containerService.GetDeployment(candidateId);
+                    resolve(containerGroup);
                 }
 
                 // 5.	If N < POOL_MINIMUM_SIZE and N > 0
                 //    a.	Return first running CI (L[0]), and mark as in-use.
                 //    b.	Trigger a background creation to fill empty slot
-                if ((n < config.PoolMinimumSize) && (n > 0)){
+                if ((n <= config.PoolMinimumSize) && (n > 0)){
                     this.logger.Write("Found available member, but below POOL_MINIMUM_SIZE. Returning available instance.");
                     let candidateId = runningIDs[0];
                     await this.poolStateStore.UpdateMember(candidateId, true);
-                    resolve(runningIDs[0]);
+                    let containerGroup = await this.containerService.GetDeployment(candidateId);
+                    resolve(containerGroup);
 
                     this.logger.Write("Initiating background instance creation.");
-                    this.containerService.CreateNewDeployment(numCpu, memoryInGB, tag);
+                    let newInstance = await this.containerService.CreateNewDeployment(numCpu, memoryInGB, tag);
+                    await this.poolStateStore.UpdateMember(newInstance.name!, true);
                 }
 
                 // 6.	If N < POOL_MINIMUM_SIZE or N = 0:
@@ -113,8 +113,8 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 if ((n < config.PoolMinimumSize) || (n === 0)){
                     this.logger.Write("No available instances found - creating new deployment...");
                     let newInstance = await this.containerService.CreateNewDeployment(numCpu, memoryInGB, tag);
-                    await this.poolStateStore.AddMember(newInstance.id!, true);
-                    resolve(newInstance.id);
+                    await this.poolStateStore.UpdateMember(newInstance.name!, true);
+                    resolve(newInstance);
                 }
             } catch (err) {
                 reject(err);

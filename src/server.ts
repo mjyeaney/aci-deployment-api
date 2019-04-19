@@ -25,14 +25,14 @@ const aci: IContainerService = new ContainerService(logger, config);
 const reporting: IReportingService = new ReportingService(logger, config, aci);
 const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, pendingCache, aci);
 
-// TESTING: Pooling 
-const poolStateStore: IPoolStateStore = new PoolStateStore();
-const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
-
 // Startup background jobs on this node
 reporting.Initialize();
 cleanupManager.ScheduleAll();
-pool.InitializePool();
+
+// TESTING: Pooling 
+const poolStateStore: IPoolStateStore = new PoolStateStore(aci);
+const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
+pool.Initialize();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
 // and JSON
@@ -118,17 +118,11 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
         let numCpu = req.body.numCpu;
         let memory = req.body.memoryInGB;
 
-        pool.GetPooledContainerInstance(numCpu, memory, tag).then((data: string) => {
+        pool.GetPooledContainerInstance(numCpu, memory, tag).then((data: ContainerGroup) => {
             resp.json(data);
         }).catch((reason: any) => {
             resp.status(500).json(reason);
         });
-
-        // aci.CreateNewDeployment(numCpu, memory, tag).then((data: ContainerGroup) => {
-        //     resp.json(data);
-        // }).catch((reason: any) => {
-        //     resp.status(500).json(reason);
-        // });
     }
 });
 

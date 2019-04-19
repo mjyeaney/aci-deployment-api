@@ -16,6 +16,9 @@ export interface IContainerService {
     StopDeployment(containerGroupName: string): Promise<void>;
     DeleteDeployment(containerGroupName: string): Promise<void>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
+    
+    UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>;
+    GetDeploymentsByTag(tagName: string, tagValue: string): Promise<Array<string>>;
 }
 
 export interface IPendingOperationStore {
