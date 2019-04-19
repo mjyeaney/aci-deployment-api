@@ -22,20 +22,18 @@ const config: IConfigurationService = new ConfigurationService();
 const app: express.Application = express();
 const pendingCache: IPendingOperationStore = new PendingOperationStore(logger);
 const aci: IContainerService = new ContainerService(logger, config);
-const reporting: IReportingService = new ReportingService(logger, config, aci);
+const poolStateStore: IPoolStateStore = new PoolStateStore(aci);
+const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
+const reporting: IReportingService = new ReportingService(logger, config, poolStateStore);
 const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, pendingCache, aci);
 
 // Startup background jobs on this node
+pool.Initialize();
 reporting.Initialize();
 cleanupManager.ScheduleAll();
 
-// TESTING: Pooling 
-const poolStateStore: IPoolStateStore = new PoolStateStore(aci);
-const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
-pool.Initialize();
-
 // Enables parsing of application/x-www-form-urlencoded MIME type
-// and JSON
+// and JSON body payloads
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 

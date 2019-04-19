@@ -3,7 +3,7 @@
 // This allows tracking of members that are in-use / etc.
 //
 
-import { IContainerService, ILogger } from "../commonTypes";
+import { IContainerService } from "../commonTypes";
 
 export interface IPoolStateStore {
     GetFreeMemberIDs(): Promise<Array<string>>;
@@ -14,6 +14,8 @@ export interface IPoolStateStore {
 export class PoolStateStore implements IPoolStateStore {
     private containerService: IContainerService;
     private TAG_NAME: string = "ITMods-PoolStatus";
+    private TAG_FREE_VALUE: string = "Free";
+    private TAG_INUSE_VALUE: string = "InUse";
 
     constructor(containerService: IContainerService) {
         this.containerService = containerService;
@@ -22,7 +24,7 @@ export class PoolStateStore implements IPoolStateStore {
     public GetFreeMemberIDs(): Promise<string[]> {
         return new Promise<string[]>(async (resolve, reject) => {
             try {
-                let deploymentNames = await this.containerService.GetDeploymentsByTag(this.TAG_NAME, "Free");
+                let deploymentNames = await this.containerService.GetDeploymentsByTag(this.TAG_NAME, this.TAG_FREE_VALUE);
                 resolve(deploymentNames);
             } catch (err) {
                 reject(err);
@@ -33,7 +35,7 @@ export class PoolStateStore implements IPoolStateStore {
     public GetInUseMemberIDs(): Promise<Array<string>>{
         return new Promise<string[]>(async (resolve, reject) => {
             try {
-                let deploymentNames = await this.containerService.GetDeploymentsByTag(this.TAG_NAME, "InUse");
+                let deploymentNames = await this.containerService.GetDeploymentsByTag(this.TAG_NAME, this.TAG_INUSE_VALUE);
                 resolve(deploymentNames);
             } catch (err) {
                 reject(err);
@@ -45,7 +47,8 @@ export class PoolStateStore implements IPoolStateStore {
         return new Promise<void>(async (resolve, reject) => {
             try {
                 await this.containerService.UpdateDeploymentTag(memberId, 
-                    "ITMods-PoolStatus", inUse ? "InUse" : "Free");
+                    this.TAG_NAME, 
+                    inUse ? this.TAG_INUSE_VALUE : this.TAG_FREE_VALUE);
                 resolve();
             } catch (err) {
                 reject(err);

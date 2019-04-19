@@ -13,6 +13,7 @@ export interface IContainerService {
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>;
+    CreateNewDeploymentSync(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>;
     StopDeployment(containerGroupName: string): Promise<void>;
     DeleteDeployment(containerGroupName: string): Promise<void>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
@@ -47,12 +48,12 @@ export class AuthInfo {
 }
 
 export class OverviewDetails {
-    RunningInstances: number = 0;
-    StoppedInstances: number = 0;
-    RunningInstanceCounts: number[] = [];
-    RunningSummary: SequenceSummary = new SequenceSummary();
-    StoppedInstanceCounts: number[] = [];
-    StoppedSummary: SequenceSummary = new SequenceSummary();
+    InUseInstances: number = 0;
+    FreeInstances: number = 0;
+    InUseInstanceCounts: number[] = [];
+    InUseSummary: SequenceSummary = new SequenceSummary();
+    FreeInstanceCounts: number[] = [];
+    FreeSummary: SequenceSummary = new SequenceSummary();
 }
 
 export class SequenceSummary {

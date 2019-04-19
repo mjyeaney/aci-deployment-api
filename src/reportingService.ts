@@ -2,21 +2,22 @@
 // Provides serivces for generating and reading overview summary status
 //
 import * as moment from "moment";
-import { OverviewDetails, SequenceSummary, IContainerService, ILogger, IReportingService, ContainerGroupStatus } from "./commonTypes";
+import { OverviewDetails, SequenceSummary, ILogger, IReportingService, ContainerGroupStatus } from "./commonTypes";
 import { IConfigurationService } from "./configService";
+import { IPoolStateStore } from "./pooling/poolStateStore";
 
 export class ReportingService implements IReportingService {
     private readonly logger: ILogger;
-    private readonly aci: IContainerService;
+    private readonly poolStateStore: IPoolStateStore;
     private refreshIntervalMs: number;
     private refreshIntervalConfig: string;
     private details: OverviewDetails = new OverviewDetails();
 
     private readonly MAX_SAMPLES: number = 60;
 
-    constructor(logger: ILogger, config: IConfigurationService, containerService: IContainerService) {
+    constructor(logger: ILogger, config: IConfigurationService, poolStateStore: IPoolStateStore) {
         this.logger = logger;
-        this.aci = containerService;
+        this.poolStateStore = poolStateStore;
         this.refreshIntervalConfig = config.GetConfiguration().ReportingRefreshInterval;
 
         // Start background timer for this server instance to gather and report data
@@ -53,21 +54,20 @@ export class ReportingService implements IReportingService {
         // Read current data for safe mutation
         let current = this.details;
 
-        // Read total instance counts and update total + buckets
-        let currentGroups = await this.aci.GetFullConatinerDetails();
-        let runningCount = currentGroups.filter(g => g.instanceView!.state!.toLowerCase() === ContainerGroupStatus.Running).length;
-        let stoppedCount = currentGroups.length - runningCount;
+        // Read pool counts
+        let runningCount = (await this.poolStateStore.GetInUseMemberIDs()).length;
+        let freeCount = (await this.poolStateStore.GetFreeMemberIDs()).length;
 
-        current.RunningInstances = runningCount;
-        current.StoppedInstances = stoppedCount;
-        current.RunningInstanceCounts.push(runningCount);
-        current.StoppedInstanceCounts.push(stoppedCount);
+        current.InUseInstances = runningCount;
+        current.FreeInstances = freeCount;
+        current.InUseInstanceCounts.push(runningCount);
+        current.FreeInstanceCounts.push(freeCount);
 
         // Apply clamping and summarze resulting stream
-        current.RunningInstanceCounts = current.RunningInstanceCounts.slice(-1 * this.MAX_SAMPLES);
-        current.StoppedInstanceCounts = current.StoppedInstanceCounts.slice(-1 * this.MAX_SAMPLES);
-        current.RunningSummary = this.getSequenceSummary(current.RunningInstanceCounts);
-        current.StoppedSummary = this.getSequenceSummary(current.StoppedInstanceCounts);
+        current.InUseInstanceCounts = current.InUseInstanceCounts.slice(-1 * this.MAX_SAMPLES);
+        current.FreeInstanceCounts = current.FreeInstanceCounts.slice(-1 * this.MAX_SAMPLES);
+        current.InUseSummary = this.getSequenceSummary(current.InUseInstanceCounts);
+        current.FreeSummary = this.getSequenceSummary(current.FreeInstanceCounts);
 
         // Update live data
         this.details = current;

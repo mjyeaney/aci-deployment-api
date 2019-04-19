@@ -71,18 +71,18 @@ export class UiBinding implements IUiBinding
     }
 
     public ShowSummaryViewData(data: OverviewDetails){
-        $("#runningInstanceChart").html(this.lineChartGenerator.Render(data.RunningInstanceCounts));
-        $("#stoppedInstanceChart").html(this.lineChartGenerator.Render(data.StoppedInstanceCounts));
+        $("#inUseInstanceChart").html(this.lineChartGenerator.Render(data.InUseInstanceCounts));
+        $("#freeInstanceChart").html(this.lineChartGenerator.Render(data.FreeInstanceCounts));
 
-        $("#runningInstanceCount").text(data.RunningInstances);
-        $("#running-min").text(data.RunningSummary.Minimum);
-        $("#running-avg").text(data.RunningSummary.Average.toFixed(2));
-        $("#running-max").text(data.RunningSummary.Maximum);
+        $("#inUseInstanceCount").text(data.InUseInstances);
+        $("#inUse-min").text(data.InUseSummary.Minimum);
+        $("#inUse-avg").text(data.InUseSummary.Average.toFixed(2));
+        $("#inUse-max").text(data.InUseSummary.Maximum);
         
-        $("#stoppedInstanceCount").text(data.StoppedInstances);
-        $("#stopped-min").text(data.StoppedSummary.Minimum);
-        $("#stopped-avg").text(data.StoppedSummary.Average.toFixed(2));
-        $("#stopped-max").text(data.StoppedSummary.Maximum);
+        $("#freeInstanceCount").text(data.FreeInstances);
+        $("#free-min").text(data.FreeSummary.Minimum);
+        $("#free-avg").text(data.FreeSummary.Average.toFixed(2));
+        $("#free-max").text(data.FreeSummary.Maximum);
     }
 
     public ShowInstanceDetailContent(){

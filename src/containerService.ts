@@ -121,6 +121,31 @@ export class ContainerService implements IContainerService {
         });
     }
 
+    public async CreateNewDeploymentSync(numCpu: number, memoryInGB: number, tag: string | undefined) {
+        return new Promise<ContainerGroup>(async (resolve, reject) => {
+            const start = Date.now();
+            
+            try {
+                await this.initializeAciClient();
+
+                let deploymentName = `aci-inst-${uuid().substr(-12)}`;
+                let groupDescription = this.getContainerGroupDescription(memoryInGB, numCpu, deploymentName, tag);
+                let containerGroup = await this.aciClient!.containerGroups.createOrUpdate(this.settings.ResourceGroup,
+                    deploymentName, 
+                    groupDescription);                    
+                
+                resolve(containerGroup);
+            } catch (err) {
+                this.logger.Write("*****Error in ::CreateNewDeployment*****");
+                this.logger.Write(JSON.stringify(err));
+                reject(err);
+            }
+
+            const duration = Date.now() - start;
+            this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
+        });
+    }
+
     public async GetFullConatinerDetails(): Promise<ContainerGroup[]> {
         // list all existing groups
         this.logger.Write("Listing group deployments...");
@@ -147,6 +172,8 @@ export class ContainerService implements IContainerService {
 
                 resolve();
             } catch (err) {
+                this.logger.Write("*****Error in ::UpdateDeploymentTag*****");
+                this.logger.Write(JSON.stringify(err));
                 reject(err);
             }
 
@@ -174,6 +201,8 @@ export class ContainerService implements IContainerService {
 
                 resolve(results);
             } catch (err) {
+                this.logger.Write("*****Error in ::GetDeploymentsByTag*****");
+                this.logger.Write(JSON.stringify(err));
                 reject(err);
             }
 
@@ -210,10 +239,7 @@ export class ContainerService implements IContainerService {
                 type: "public",
                 dnsNameLabel: groupName
             },
-            restartPolicy: "Never"//,
-            // tags: {
-            //     sample: "special value"
-            // }
+            restartPolicy: "Never"
         };
     }
 
@@ -246,6 +272,11 @@ export class ContainerService implements IContainerService {
                         longRunningOperationRetryTimeout: 5
                     });
                     resolve();
+                })
+                .catch((err: any) => {
+                    this.logger.Write("*****Error in ::initializeArmClient*****");
+                    this.logger.Write(JSON.stringify(err));
+                    reject(err);
                 });
             } else {
                 this.logger.Write("AciClient already initialized...");
@@ -269,6 +300,11 @@ export class ContainerService implements IContainerService {
                         longRunningOperationRetryTimeout: 5
                     });
                     resolve();
+                })
+                .catch((err: any) => {
+                    this.logger.Write("*****Error in ::initializeArmClient*****");
+                    this.logger.Write(JSON.stringify(err));
+                    reject(err);
                 });
             } else {
                 this.logger.Write("ArmClient already initialized...");
