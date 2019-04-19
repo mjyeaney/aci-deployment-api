@@ -90,7 +90,6 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     let deploymentName = candidateId.substr(candidateId.lastIndexOf('/') + 1);
                     let containerGroup = await this.containerService.GetDeployment(deploymentName);
                     resolve(containerGroup);
-                    return;
                 }
 
                 // 5.	If N < POOL_MINIMUM_SIZE and N > 0
@@ -105,22 +104,22 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     let containerGroup = await this.containerService.GetDeployment(deploymentName);
                     resolve(containerGroup);
 
-                    this.logger.Write("Initiating background instance creation.");
-                    let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
-                    await this.poolStateStore.UpdateMember(newInstance.id!, false);
-                    return;
+                    (async () => {
+                        this.logger.Write("Initiating background instance creation.");
+                        let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
+                        await this.poolStateStore.UpdateMember(newInstance.id!, false);
+                    })();
                 }
 
-                // 6.	If N < POOL_MINIMUM_SIZE or N = 0:
+                // 6.	If N = 0:
                 //    a.	Create new instance
                 //    b.	Store name as in-use list
                 //    c.	Wait for startup acknowledgment and return info to caller.
-                if ((n < config.PoolMinimumSize) || (n === 0)){
+                if (n === 0){
                     this.logger.Write("No available instances found - creating new deployment...");
                     let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
                     await this.poolStateStore.UpdateMember(newInstance.id!, true);
                     resolve(newInstance);
-                    return;
                 }
             } catch (err) {
                 reject(err);
