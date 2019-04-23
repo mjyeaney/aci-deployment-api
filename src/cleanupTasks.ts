@@ -4,7 +4,7 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ContainerGroupStatus, IPendingOperationStore } from "./commonTypes";
+import { ILogger, IContainerService, ContainerGroupStatus } from "./commonTypes";
 import * as moment from "moment";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
@@ -26,12 +26,12 @@ export class CleanupTaskRunner implements ICleanupTaskRunner {
     private readonly logger: ILogger;
     private tasks: ICleanupTask[] = [];
 
-    constructor(logger: ILogger, pendingOps: IPendingOperationStore, aci: IContainerService){
+    constructor(logger: ILogger, aci: IContainerService){
         this.logger = logger;
 
         // Add known tasks - later, we can dynamically enumerate these tasks 
         // and filter by those which are enabled / etc.
-        this.tasks.push(new PurgeUnusedDeployments(logger, pendingOps, aci));
+        this.tasks.push(new PurgeUnusedDeployments(logger, aci));
     }
 
     public ScheduleAll(): void {
@@ -57,12 +57,10 @@ export class CleanupTaskRunner implements ICleanupTaskRunner {
 
 export class PurgeUnusedDeployments implements ICleanupTask {
     private readonly aci: IContainerService;
-    private readonly pendingOps: IPendingOperationStore;
     private readonly logger: ILogger;
     
-    constructor(logger: ILogger, pendingOps: IPendingOperationStore, aci: IContainerService){
+    constructor(logger: ILogger, aci: IContainerService){
         this.logger = logger;
-        this.pendingOps = pendingOps
         this.aci = aci;
     }
 
@@ -105,7 +103,6 @@ export class PurgeUnusedDeployments implements ICleanupTask {
                 this.logger.Write(`Instance last update: ${duration} hours ago`);
 
                 if (duration >= 4){
-                    await this.pendingOps.AddPendingOperation(c.name!);
                     itemsToRemove.push(c);
                 }
             }
@@ -124,8 +121,6 @@ export class PurgeUnusedDeployments implements ICleanupTask {
             catch (err){
                 this.logger.Write(`[ERROR] - ${JSON.stringify(err)}`);
             }
-
-            await this.pendingOps.RemovePendingOperation(d.name!);
         }
     }
 }

@@ -6,12 +6,10 @@ import { ConsoleLogger } from "./logging";
 import { ConfigurationService, IConfigurationService } from "./configService";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import { ContainerService }  from "./containerService";
-import { ReportingService }  from "./reportingService";
-import { PendingOperationStore } from "./pendingOperationStore";
-import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanupTasks";
-
 import { IContainerInstancePool, ContainerInstancePool } from "./pooling/containerInstancePool";
 import { IPoolStateStore, PoolStateStore } from "./pooling/poolStateStore";
+import { ReportingService }  from "./reportingService";
+import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanupTasks";
 
 // Init environment
 dotenv.config();
@@ -20,14 +18,13 @@ dotenv.config();
 const logger: ILogger = new ConsoleLogger();
 const config: IConfigurationService = new ConfigurationService();
 const app: express.Application = express();
-const pendingCache: IPendingOperationStore = new PendingOperationStore(logger);
 const aci: IContainerService = new ContainerService(logger, config);
 const poolStateStore: IPoolStateStore = new PoolStateStore(aci);
 const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
 const reporting: IReportingService = new ReportingService(logger, config, poolStateStore);
-const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, pendingCache, aci);
+const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, aci);
 
-// Startup background jobs on this node
+// Startup background tasks
 pool.Initialize();
 reporting.Initialize();
 cleanupManager.ScheduleAll();
@@ -135,11 +132,11 @@ app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: exp
     });
 });
 
-app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, resp: express.Response) => {
-    logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/stop...`);
+app.post("/api/deployments/:deploymentId/release", async (req: express.Request, resp: express.Response) => {
+    logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/release...`);
     setNoCache(resp);
 
-    aci.StopDeployment(req.params.deploymentId).then(() => {
+    poolStateStore.UpdateMember(req.params.deploymentId, false).then(() => {
         resp.status(200).end();
     }).catch((reason: any) => {
         resp.status(500).json(reason);
