@@ -21,14 +21,6 @@ export interface IContainerService {
     GetDeploymentsByTag(tagName: string, tagValue: string): Promise<Array<string>>;
 }
 
-export interface IPendingOperationStore {
-    GetPendingOperations(): Promise<string[]>;
-    AddPendingOperation(name: string): Promise<void>;
-    RemovePendingOperation(name: string): Promise<void>;
-    LockStore(): Promise<() => Promise<void>>;
-    UnlockStore(): Promise<void>;
-}
-
 export interface IReportingService {
     Initialize(): void;
     GetOverviewDetails(): Promise<OverviewDetails>;
@@ -44,6 +36,7 @@ export class TaskScheduleInfo {
 }
 
 export interface ITask {
+    Name: string;
     GetScheduleInfo(): TaskScheduleInfo;
     Run(): Promise<void>;
 }
@@ -100,4 +93,5 @@ export class ContainerGroupGridRow {
     MemoryInGB: number = 0;
     IpAddress?: string;
     OsType?: string;
+    InUse?: boolean;
 }

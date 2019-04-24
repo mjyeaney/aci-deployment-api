@@ -7,20 +7,23 @@
 import { ILogger, IContainerService, ITaskRunner, ITask } from "../commonTypes";
 import { PurgeUnusedDeployments } from "./purgeUnusedDeployments";
 import * as moment from "moment";
+import { IPoolStateStore } from "../pooling/poolStateStore";
 
 export class DefaultTaskRunner implements ITaskRunner {
     private readonly logger: ILogger;
     private tasks: ITask[] = [];
 
-    constructor(logger: ILogger, aci: IContainerService){
+    constructor(logger: ILogger, aci: IContainerService, poolStateStore: IPoolStateStore){
         this.logger = logger;
 
         // Add known tasks - later, we can dynamically enumerate these tasks 
         // and filter by those which are enabled / etc.
-        this.tasks.push(new PurgeUnusedDeployments(logger, aci));
+        this.logger.Write("Adding tasks to DefaultTaskRunner");
+        this.tasks.push(new PurgeUnusedDeployments(logger, aci, poolStateStore));
     }
 
     public ScheduleAll(): void {
+        this.logger.Write("Scheduling all tasks...");
         for (let t of this.tasks){
             let config = t.GetScheduleInfo();
             let intervalMs = moment.duration(config.Interval).asMilliseconds();
@@ -36,6 +39,7 @@ export class DefaultTaskRunner implements ITaskRunner {
                 }, hoistedInterval);
             };
 
+            this.logger.Write(`Starting task ${t.Name}...`);
             scheduleFn();
         }
     }

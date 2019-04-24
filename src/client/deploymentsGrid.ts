@@ -10,7 +10,8 @@ export class DeploymentsGrid {
             <colgroup>
                 <col width="20%" />
                 <col width="*" />
-                <col width="350px" />
+                <col width="250px" />
+                <col width="100px" />
                 <col width="100px" />
                 <col width="100px" />
             </colgroup>
@@ -18,6 +19,7 @@ export class DeploymentsGrid {
                 <th>Container Group Name</th>
                 <th>IP Address</th>
                 <th>Image Name</th>
+                <th>In Use</th>
                 <th>CPU Count</th>
                 <th>Memory (GB)</th>
             </tr>
@@ -33,6 +35,7 @@ export class DeploymentsGrid {
                 <td>${item.Name}</td>
                 <td>${item.IpAddress ? item.IpAddress : "Unassigned"}</td>
                 <td>${item.Image}</td>
+                <td>${item.InUse ? "Yes" : "No"}</td>
                 <td>${item.CpuCount}</td>
                 <td>${item.MemoryInGB}</td>
             </tr>

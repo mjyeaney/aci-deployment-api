@@ -5,6 +5,7 @@
 //
 
 import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../commonTypes";
+import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
 export interface IServiceApi {
     LoadAuthInfo(): Promise<AuthInfo>;
@@ -67,7 +68,7 @@ export class ServiceApi implements IServiceApi {
                 if (xhr.status === 200){
                     const payload: any[] = JSON.parse(xhr.responseText);
                     const data: ContainerGroupGridRow[] = [];
-                    payload.map((item: any) => {
+                    payload.map((item: ContainerGroup) => {
                         let row = new ContainerGroupGridRow();
                         row.Name = item.name!;
                         row.Image = item.containers![0].image;
@@ -76,6 +77,14 @@ export class ServiceApi implements IServiceApi {
                         row.IpAddress = item.ipAddress!.ip!;
                         row.OsType = item.osType!;
                         row.Status = "Unknown";
+
+                        // Leverage tags for pool status
+                        if ((item.tags) && (item.tags!["ITMods-PoolStatus"])){
+                            row.InUse = (item.tags!["ITMods-PoolStatus"] === "InUse");
+                        } else {
+                            row.InUse = false;
+                        }
+
                         data.push(row);
                     });
                     resolve(data);

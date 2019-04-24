@@ -15,19 +15,19 @@ import { DefaultTaskRunner } from "./jobs/defaultTaskRunner";
 dotenv.config();
 
 // Setup services
+const app: express.Application = express();
 const logger: ILogger = new ConsoleLogger();
 const config: IConfigurationService = new ConfigurationService();
-const app: express.Application = express();
 const aci: IContainerService = new ContainerService(logger, config);
 const poolStateStore: IPoolStateStore = new PoolStateStore(aci);
 const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
 const reporting: IReportingService = new ReportingService(logger, config, poolStateStore);
-const cleanupManager: ITaskRunner = new DefaultTaskRunner(logger, aci);
+const taskRunner: ITaskRunner = new DefaultTaskRunner(logger, aci, poolStateStore);
 
 // Startup background tasks
 pool.Initialize();
 reporting.Initialize();
-cleanupManager.ScheduleAll();
+taskRunner.ScheduleAll();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
 // and JSON body payloads
@@ -136,7 +136,20 @@ app.post("/api/deployments/:deploymentId/release", async (req: express.Request, 
     logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/release...`);
     setNoCache(resp);
 
-    poolStateStore.UpdateMember(req.params.deploymentId, false).then(() => {
+    aci.GetDeployment(req.params.deploymentId).then((containerGroup) => {
+        poolStateStore.UpdateMember(containerGroup.id!, false).then(() => {
+            resp.status(200).end();
+        }).catch((reason: any) => {
+            resp.status(500).json(reason);
+        });
+    });
+});
+
+app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, resp: express.Response) => {
+    logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/stop...`);
+    setNoCache(resp);
+
+    aci.StopDeployment(req.params.deploymentId).then(() => {
         resp.status(200).end();
     }).catch((reason: any) => {
         resp.status(500).json(reason);

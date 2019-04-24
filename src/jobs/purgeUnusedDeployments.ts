@@ -5,16 +5,20 @@
 //
 
 import { ILogger, IContainerService, ContainerGroupStatus, ITask, TaskScheduleInfo } from "../commonTypes";
-import * as moment from "moment";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { IPoolStateStore } from "../pooling/poolStateStore";
 
 export class PurgeUnusedDeployments implements ITask {
     private readonly aci: IContainerService;
+    private readonly poolStateStore: IPoolStateStore;
     private readonly logger: ILogger;
+
+    public Name: string = "PurgeUnusedDeployments";
     
-    constructor(logger: ILogger, aci: IContainerService){
+    constructor(logger: ILogger, aci: IContainerService, poolStateStore: IPoolStateStore){
         this.logger = logger;
         this.aci = aci;
+        this.poolStateStore = poolStateStore;
     }
 
     public GetScheduleInfo(): TaskScheduleInfo {
@@ -32,7 +36,7 @@ export class PurgeUnusedDeployments implements ITask {
         let itemsToRemove: ContainerGroup[] = [];
         let containerGroups = await this.aci.GetFullConatinerDetails();
 
-        // Find any that are stopped or terminated, that have no updates for 10 mins
+        // Find any that are stopped / terminated
         for (let c of containerGroups){
 
             let currentState = c.containers[0]!.instanceView!.currentState!;
@@ -41,23 +45,7 @@ export class PurgeUnusedDeployments implements ITask {
                 (currentState.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
 
                 this.logger.Write(`Found instance candidate for removal: ${c.name}`);
-
-                // Found a candidate deployment - check last update
-                let lastUpdate = currentState.finishTime;
-
-                // Finish time may be null; if so, revert to start time
-                if (!lastUpdate){
-                    lastUpdate = currentState.startTime;
-                }
-
-                let diff = moment().diff(moment(lastUpdate));
-                let duration = moment.duration(diff).asHours();
-
-                this.logger.Write(`Instance last update: ${duration} hours ago`);
-
-                if (duration >= 4){
-                    itemsToRemove.push(c);
-                }
+                itemsToRemove.push(c);
             }
         }
 
@@ -75,5 +63,28 @@ export class PurgeUnusedDeployments implements ITask {
                 this.logger.Write(`[ERROR] - ${JSON.stringify(err)}`);
             }
         }
+
+        // TODO: Replace deleted instances with new members, and mark them as available
+        const tasks: Array<Promise<void>> = [];
+        for (let c = 0; c < itemsToRemove.length; c++){
+            // Firing these creates in parallel to minmize delays
+            tasks.push((async() => {
+                try {
+                    // TODO: What spec to initialize with? Guessing with 2x2 for now
+                    // NOTE: This is a 'sync' creation, because the ARM/MSREST lib won't allow an update 
+                    // while another update is pending (even though it works).
+                    this.logger.Write(`Creating replacement member ${c}...`);
+                    let newMember = await this.aci.CreateNewDeploymentSync(2, 2, undefined);
+
+                    this.logger.Write(`Done - adding member '${newMember.id}' to pool state store`);
+                    await this.poolStateStore.UpdateMember(newMember.id!, false);
+                } catch (err) {
+                    this.logger.Write(`**********ERROR during cleanup background task**********: ${JSON.stringify(err)}`);
+                }
+            })());
+        }
+
+        // Wait for all work to finish before returning
+        await Promise.all(tasks);
     }
 }

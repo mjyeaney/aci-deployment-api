@@ -115,9 +115,6 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     let deploymentName = candidateId.substr(candidateId.lastIndexOf('/') + 1);
                     let containerGroup = await this.containerService.GetDeployment(deploymentName);
 
-                    await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
-                    this.logger.Write(`Critical section finished for ::GetPooledContainerInstance()`);
-
                     resolve(containerGroup);
                 }
 
@@ -132,9 +129,6 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     // NOTE the pool stores the entire resource ID; only need the deployment ID to retrieve details
                     let deploymentName = candidateId.substr(candidateId.lastIndexOf('/') + 1);
                     let containerGroup = await this.containerService.GetDeployment(deploymentName);
-
-                    await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
-                    this.logger.Write(`Critical section finished for ::GetPooledContainerInstance()`);
 
                     resolve(containerGroup);
 
@@ -155,13 +149,10 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 //    b.	Store name as in-use list
                 //    c.	Wait for startup acknowledgment and return info to caller.
                 if (n === 0){
-                    await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
-                    this.logger.Write(`Critical section finished for ::GetPooledContainerInstance()`);
-                    
                     this.logger.Write("No available instances found - creating new deployment...");
-                    let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
-                    await this.poolStateStore.UpdateMember(newInstance.id!, true);
-                    resolve(newInstance);
+                    //let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
+                    //await this.poolStateStore.UpdateMember(newInstance.id!, true);
+                    //resolve(newInstance);
 
                     // Fire background task to create a replacement - Cleanup tasks will normalize over-provisioning.
                     (async () => {
@@ -173,9 +164,15 @@ export class ContainerInstancePool implements IContainerInstancePool {
                             this.logger.Write(`**********ERROR during background task**********: ${JSON.stringify(err)}`);
                         }
                     })();
+
+                    // Make sure to reject
+                    throw "No available computer instances; please try again later.";
                 }
             } catch (err) {
                 reject(err);
+            } finally {
+                await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
+                this.logger.Write(`Critical section finished for ::GetPooledContainerInstance()`);
             }
         });
     }

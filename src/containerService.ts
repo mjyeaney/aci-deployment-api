@@ -190,10 +190,13 @@ export class ContainerService implements IContainerService {
                 await this.initializeArmClient();
 
                 let results: Array<string> = [];
+                let tagFilter = `tagName eq '${tagName}' and tagValue eq '${tagValue}'`;
                 let resources = await this.armClient!.resources.listByResourceGroup(this.settings.ResourceGroup, 
                     {
-                        filter: `tagName eq '${tagName}' and tagValue eq '${tagValue}'`
+                        filter: tagFilter
                     });
+
+                this.logger.Write(`Found ${resources.length} resources matching tag filter "${tagFilter}"`);
 
                 resources.forEach(res => {
                     results.push(res.id!);

@@ -5,7 +5,6 @@
 import { IUiBinding, UiBinding } from "./uiBinding";
 import { IServiceApi, ServiceApi } from "./serviceApi";
 import { LineChart } from "./charting";
-import { ConsoleLogger } from "../logging";
 
 interface IApplication
 {
