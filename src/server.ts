@@ -1,15 +1,15 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, IContainerService, IReportingService } from "./commonTypes";
+import { ILogger, IContainerService, IReportingService, ITaskRunner } from "./commonTypes";
 import { ConsoleLogger } from "./logging";
 import { ConfigurationService, IConfigurationService } from "./configService";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import { ContainerService }  from "./containerService";
 import { IContainerInstancePool, ContainerInstancePool } from "./pooling/containerInstancePool";
 import { IPoolStateStore, PoolStateStore } from "./pooling/poolStateStore";
-import { ReportingService }  from "./reportingService";
-import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanupTasks";
+import { ReportingService }  from "./reporting/reportingService";
+import { DefaultTaskRunner } from "./jobs/defaultTaskRunner";
 
 // Init environment
 dotenv.config();
@@ -22,7 +22,7 @@ const aci: IContainerService = new ContainerService(logger, config);
 const poolStateStore: IPoolStateStore = new PoolStateStore(aci);
 const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
 const reporting: IReportingService = new ReportingService(logger, config, poolStateStore);
-const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, aci);
+const cleanupManager: ITaskRunner = new DefaultTaskRunner(logger, aci);
 
 // Startup background tasks
 pool.Initialize();

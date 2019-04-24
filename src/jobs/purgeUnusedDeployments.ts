@@ -4,58 +4,11 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ContainerGroupStatus } from "./commonTypes";
+import { ILogger, IContainerService, ContainerGroupStatus, ITask, TaskScheduleInfo } from "../commonTypes";
 import * as moment from "moment";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
-export interface ICleanupTaskRunner {
-    ScheduleAll(): void;
-}
-
-export class CleanupTaskScheduleInfo {
-    Enabled: boolean = false;
-    Interval: string = "";
-}
-
-export interface ICleanupTask {
-    GetScheduleInfo(): CleanupTaskScheduleInfo;
-    Run(): Promise<void>;
-}
-
-export class CleanupTaskRunner implements ICleanupTaskRunner {
-    private readonly logger: ILogger;
-    private tasks: ICleanupTask[] = [];
-
-    constructor(logger: ILogger, aci: IContainerService){
-        this.logger = logger;
-
-        // Add known tasks - later, we can dynamically enumerate these tasks 
-        // and filter by those which are enabled / etc.
-        this.tasks.push(new PurgeUnusedDeployments(logger, aci));
-    }
-
-    public ScheduleAll(): void {
-        for (let t of this.tasks){
-            let config = t.GetScheduleInfo();
-            let intervalMs = moment.duration(config.Interval).asMilliseconds();
-
-            let scheduleFn = () => {
-                let hoistedTask = t;
-                let hoistedCallback = scheduleFn;
-                let hoistedInterval = intervalMs;
-
-                setTimeout(async () => {
-                    await hoistedTask.Run();
-                    hoistedCallback();
-                }, hoistedInterval);
-            };
-
-            scheduleFn();
-        }
-    }
-}
-
-export class PurgeUnusedDeployments implements ICleanupTask {
+export class PurgeUnusedDeployments implements ITask {
     private readonly aci: IContainerService;
     private readonly logger: ILogger;
     
@@ -64,9 +17,9 @@ export class PurgeUnusedDeployments implements ICleanupTask {
         this.aci = aci;
     }
 
-    public GetScheduleInfo(): CleanupTaskScheduleInfo {
+    public GetScheduleInfo(): TaskScheduleInfo {
         this.logger.Write("Retreiving task schedule infomation for [PurgeUnusedDeployments]...");
-        const config = new CleanupTaskScheduleInfo();
+        const config = new TaskScheduleInfo();
         config.Enabled = true;
         config.Interval = "PT5M";
         return config;

@@ -17,7 +17,6 @@ export interface IContainerService {
     StopDeployment(containerGroupName: string): Promise<void>;
     DeleteDeployment(containerGroupName: string): Promise<void>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
-    
     UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>;
     GetDeploymentsByTag(tagName: string, tagValue: string): Promise<Array<string>>;
 }
@@ -33,6 +32,20 @@ export interface IPendingOperationStore {
 export interface IReportingService {
     Initialize(): void;
     GetOverviewDetails(): Promise<OverviewDetails>;
+}
+
+export interface ITaskRunner {
+    ScheduleAll(): void;
+}
+
+export class TaskScheduleInfo {
+    Enabled: boolean = false;
+    Interval: string = "";
+}
+
+export interface ITask {
+    GetScheduleInfo(): TaskScheduleInfo;
+    Run(): Promise<void>;
 }
 
 export enum ContainerGroupStatus {
