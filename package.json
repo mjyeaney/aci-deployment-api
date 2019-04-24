@@ -14,7 +14,7 @@
     "start": "cp ./.env ./dist && cd ./dist && node server.js",
     "build-deploy-zip": ". ./deploy/azure-zip-build.sh",
     "deploy": ". ./deploy/azure-zip-deploy.sh",
-    "test": "cd ./dist && ../node_modules/mocha/bin/mocha ./tests --timeout 60000"
+    "test": "cd ./dist && ../node_modules/mocha/bin/mocha ./tests/*/*.js --reporter mocha-junit-reporter --reporter-options mochaFile=../results.xml"
   },
   "author": "Mike Yeaney",
   "license": "MIT",
@@ -34,6 +34,7 @@
     "express": "^4.16.4",
     "jquery": "^3.4.0",
     "mocha": "^5.2.0",
+    "mocha-junit-reporter": "^1.22.0",
     "moment": "^2.24.0",
     "proper-lockfile": "^3.2.0",
     "uuid": "^3.3.2"
