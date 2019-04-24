@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, IPendingOperationStore, IContainerService, IReportingService } from "./commonTypes";
+import { ILogger, IContainerService, IReportingService } from "./commonTypes";
 import { ConsoleLogger } from "./logging";
 import { ConfigurationService, IConfigurationService } from "./configService";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
