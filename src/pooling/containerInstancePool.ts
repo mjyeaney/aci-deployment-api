@@ -139,7 +139,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                             let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
                             await this.poolStateStore.UpdateMember(newInstance.id!, false);
                         } catch (err) {
-                            this.logger.Write(`**********ERROR during background task**********: ${JSON.stringify(err)}`);
+                            this.logger.Write(`**********ERROR during background task**********:\n${JSON.stringify(err)}`);
                         }
                     })();
                 }
@@ -148,6 +148,8 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 //    a.	Create new instance
                 //    b.	Store name as in-use list
                 //    c.	Wait for startup acknowledgment and return info to caller.
+                // OR.....
+                //    a.    Throw exception and tell clients to try again later, but start a background deployment
                 if (n === 0){
                     this.logger.Write("No available instances found - creating new deployment...");
                     //let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
@@ -161,7 +163,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                             let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
                             await this.poolStateStore.UpdateMember(newInstance.id!, false);
                         } catch (err) {
-                            this.logger.Write(`**********ERROR during background task**********: ${JSON.stringify(err)}`);
+                            this.logger.Write(`**********ERROR during background task**********:\n${JSON.stringify(err)}`);
                         }
                     })();
 

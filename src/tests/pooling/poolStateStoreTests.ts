@@ -6,7 +6,7 @@ import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerins
 let LastUpdateDeploymentTagValue: string;
 
 class MockAciServices implements IContainerService {
-    public GetDeployments(): Promise<ContainerGroupListResult> {
+    GetDeployments(): Promise<ContainerGroupListResult> {
         throw new Error("method not implemented");
     };
 
@@ -32,9 +32,7 @@ class MockAciServices implements IContainerService {
 
     GetFullConatinerDetails(): Promise<ContainerGroup[]>{
         throw new Error("method not implemented");
-    }
-
-    
+    }    
 
     UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>{
         return new Promise<void>((resolve) => {
