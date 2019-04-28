@@ -4,9 +4,8 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ContainerGroupStatus, ITask, TaskScheduleInfo } from "../commonTypes";
+import { ILogger, IContainerService, ContainerGroupStatus, ITask, TaskScheduleInfo, IPoolStateStore } from "../commonTypes";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
-import { IPoolStateStore } from "../pooling/poolStateStore";
 
 export class PurgeUnusedDeployments implements ITask {
     private readonly aci: IContainerService;
@@ -74,7 +73,7 @@ export class PurgeUnusedDeployments implements ITask {
                     // NOTE: This is a 'sync' creation, because the ARM/MSREST lib won't allow an update 
                     // while another update is pending (even though it works).
                     this.logger.Write(`Creating replacement member ${c}...`);
-                    let newMember = await this.aci.CreateNewDeploymentSync(2, 2, undefined);
+                    let newMember = await this.aci.CreateNewDeployment(2, 2, undefined);
 
                     this.logger.Write(`Done - adding member '${newMember.id}' to pool state store`);
                     await this.poolStateStore.UpdateMember(newMember.id!, false);

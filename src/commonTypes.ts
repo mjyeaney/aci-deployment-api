@@ -9,16 +9,25 @@ export interface ILogger {
     Write(message: string): void;
 }
 
+export interface IContainerInstancePool {
+    Initialize(): Promise<void>;
+    GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup>;
+}
+
+export interface IPoolStateStore {
+    GetFreeMemberIDs(): Promise<Array<string>>;
+    GetInUseMemberIDs(): Promise<Array<string>>;
+    UpdateMember(memberId: string, inUse: boolean): Promise<void>;
+}
+
 export interface IContainerService {
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
-    CreateNewDeployment(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>;
-    CreateNewDeploymentSync(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>;
+    CreateNewDeployment(numCpu: number, memoryInGB: number, imageTag: string | undefined): Promise<ContainerGroup>;
     StopDeployment(containerGroupName: string): Promise<void>;
     DeleteDeployment(containerGroupName: string): Promise<void>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
     UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>;
-    GetDeploymentsByTag(tagName: string, tagValue: string): Promise<Array<string>>;
 }
 
 export interface IReportingService {

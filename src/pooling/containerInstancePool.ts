@@ -1,16 +1,10 @@
 //
 // Provides operations over a pool of resources
 //
-import { IContainerService, ILogger } from "../commonTypes";
+import { IContainerService, ILogger, IContainerInstancePool, IPoolStateStore } from "../commonTypes";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 import { IConfigurationService } from "../configService";
-import { IPoolStateStore } from "./poolStateStore";
 import * as lockfile from "proper-lockfile";
-
-export interface IContainerInstancePool {
-    Initialize(): Promise<void>;
-    GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup>;
-}
 
 export class ContainerInstancePool implements IContainerInstancePool {
     private readonly INIT_ROOT_FILE_PATH: string = "./data/init.lock";
@@ -47,7 +41,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
 
                 // 2. If (n < POOL_MINIMUM_SIZE), create new instances up to that size
                 this.logger.Write(`Found ${n} free members..`);
-                const membersToCreate = config.PoolMinimumSize - n;
+                const membersToCreate = Math.max((config.PoolMinimumSize - n), 0);
 
                 this.logger.Write(`Scheduling creation of ${membersToCreate} new members..`);
                 const tasks: Array<Promise<void>> = [];
@@ -60,7 +54,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                             // NOTE: This is a 'sync' creation, because the ARM/MSREST lib won't allow an update 
                             // while another update is pending (even though it works).
                             this.logger.Write(`Creating pool member ${j}...`);
-                            let newMember = await this.containerService.CreateNewDeploymentSync(2, 2, undefined);
+                            let newMember = await this.containerService.CreateNewDeployment(2, 2, undefined);
 
                             this.logger.Write(`Done - adding member '${newMember.id}' to pool state store`);
                             await this.poolStateStore.UpdateMember(newMember.id!, false);
@@ -136,7 +130,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     (async () => {
                         try {
                             this.logger.Write("Initiating background instance creation.");
-                            let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
+                            let newInstance = await this.containerService.CreateNewDeployment(numCpu, memoryInGB, tag);
                             await this.poolStateStore.UpdateMember(newInstance.id!, false);
                         } catch (err) {
                             this.logger.Write(`**********ERROR during background task**********:\n${JSON.stringify(err)}`);
@@ -160,7 +154,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     (async () => {
                         try {
                             this.logger.Write("Initiating background instance creation.");
-                            let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
+                            let newInstance = await this.containerService.CreateNewDeployment(numCpu, memoryInGB, tag);
                             await this.poolStateStore.UpdateMember(newInstance.id!, false);
                         } catch (err) {
                             this.logger.Write(`**********ERROR during background task**********:\n${JSON.stringify(err)}`);

@@ -2,9 +2,8 @@
 // Provides serivces for generating and reading overview summary status
 //
 import * as moment from "moment";
-import { OverviewDetails, SequenceSummary, ILogger, IReportingService, ContainerGroupStatus } from "../commonTypes";
+import { OverviewDetails, SequenceSummary, ILogger, IReportingService, IPoolStateStore } from "../commonTypes";
 import { IConfigurationService } from "../configService";
-import { IPoolStateStore } from "../pooling/poolStateStore";
 
 export class ReportingService implements IReportingService {
     private readonly logger: ILogger;

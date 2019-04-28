@@ -96,7 +96,7 @@ export class ContainerService implements IContainerService {
         })
     }
 
-    public async CreateNewDeployment(numCpu: number, memoryInGB: number, tag: string | undefined) {
+    public async CreateNewDeployment(numCpu: number, memoryInGB: number, imageTag: string | undefined) {
         return new Promise<ContainerGroup>(async (resolve, reject) => {
             const start = Date.now();
             
@@ -104,32 +104,7 @@ export class ContainerService implements IContainerService {
                 await this.initializeAciClient();
 
                 let deploymentName = `aci-inst-${uuid().substr(-12)}`;
-                let groupDescription = this.getContainerGroupDescription(memoryInGB, numCpu, deploymentName, tag);
-                let containerGroup = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.settings.ResourceGroup,
-                    deploymentName, 
-                    groupDescription);                    
-                
-                resolve(containerGroup);
-            } catch (err) {
-                this.logger.Write("*****Error in ::CreateNewDeployment*****");
-                this.logger.Write(JSON.stringify(err));
-                reject(err);
-            }
-
-            const duration = Date.now() - start;
-            this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
-        });
-    }
-
-    public async CreateNewDeploymentSync(numCpu: number, memoryInGB: number, tag: string | undefined) {
-        return new Promise<ContainerGroup>(async (resolve, reject) => {
-            const start = Date.now();
-            
-            try {
-                await this.initializeAciClient();
-
-                let deploymentName = `aci-inst-${uuid().substr(-12)}`;
-                let groupDescription = this.getContainerGroupDescription(memoryInGB, numCpu, deploymentName, tag);
+                let groupDescription = this.getContainerGroupDescription(memoryInGB, numCpu, deploymentName, imageTag);
                 let containerGroup = await this.aciClient!.containerGroups.createOrUpdate(this.settings.ResourceGroup,
                     deploymentName, 
                     groupDescription);                    
@@ -182,42 +157,10 @@ export class ContainerService implements IContainerService {
         });
     }
 
-    public GetDeploymentsByTag(tagName: string, tagValue: string): Promise<Array<string>>{
-        return new Promise<Array<string>>(async (resolve, reject) => {
-            const start = Date.now();
-            
-            try {
-                await this.initializeArmClient();
-
-                let results: Array<string> = [];
-                let tagFilter = `tagName eq '${tagName}' and tagValue eq '${tagValue}'`;
-                let resources = await this.armClient!.resources.listByResourceGroup(this.settings.ResourceGroup, 
-                    {
-                        filter: tagFilter
-                    });
-
-                this.logger.Write(`Found ${resources.length} resources matching tag filter "${tagFilter}"`);
-
-                resources.forEach(res => {
-                    results.push(res.id!);
-                });
-
-                resolve(results);
-            } catch (err) {
-                this.logger.Write("*****Error in ::GetDeploymentsByTag*****");
-                this.logger.Write(JSON.stringify(err));
-                reject(err);
-            }
-
-            const duration = Date.now() - start;
-            this.logger.Write(`::GetDeploymentsByTag duration: ${duration} ms`);
-        });
-    }
-
-    private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, tag: string | undefined) {
+    private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, imageTag: string | undefined) {
         let imageName = this.settings.ContainerImage;
-        if (tag) {
-            imageName = `${this.settings.ContainerImage}:${tag}`;
+        if (imageTag) {
+            imageName = `${this.settings.ContainerImage}:${imageTag}`;
         }
 
         return {
@@ -282,8 +225,8 @@ export class ContainerService implements IContainerService {
                     reject(err);
                 });
             } else {
-                this.logger.Write("AciClient already initialized...");
-                resolve();
+               this.logger.Write("AciClient already initialized...");
+               resolve();
             }
         });
     }
@@ -310,8 +253,8 @@ export class ContainerService implements IContainerService {
                     reject(err);
                 });
             } else {
-                this.logger.Write("ArmClient already initialized...");
-                resolve();
+               this.logger.Write("ArmClient already initialized...");
+               resolve();
             }
         });
     }

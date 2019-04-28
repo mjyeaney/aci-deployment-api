@@ -4,10 +4,9 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ITaskRunner, ITask } from "../commonTypes";
+import { ILogger, IContainerService, ITaskRunner, ITask, IPoolStateStore } from "../commonTypes";
 import { PurgeUnusedDeployments } from "./purgeUnusedDeployments";
 import * as moment from "moment";
-import { IPoolStateStore } from "../pooling/poolStateStore";
 
 export class DefaultTaskRunner implements ITaskRunner {
     private readonly logger: ILogger;

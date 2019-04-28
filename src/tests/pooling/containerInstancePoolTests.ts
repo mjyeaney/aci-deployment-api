@@ -1,7 +1,6 @@
 import * as Assert from "assert";
 import { ContainerInstancePool } from "../../pooling/containerInstancePool";
-import { IPoolStateStore } from "../../pooling/poolStateStore";
-import { IContainerService, ILogger, ConfigurationDetails, ContainerGroupGridRow } from "../../commonTypes";
+import { IContainerService, ILogger, ConfigurationDetails, IPoolStateStore } from "../../commonTypes";
 import { IConfigurationService } from "../../configService";
 import { ContainerGroup, ContainerGroupListResult } from "azure-arm-containerinstance/lib/models";
 
