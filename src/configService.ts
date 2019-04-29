@@ -25,6 +25,9 @@ export class ConfigurationService implements IConfigurationService {
         config.ContainerRegistryUsername = process.env.CONTAINER_REGISTRY_USERNAME || "";
         config.ContainerRegistryPassword = process.env.CONTAINER_REGISTRY_PASSWORD || "";
         config.PoolMinimumSize = parseInt(process.env.POOL_MINIMUM_SIZE!);
+        config.PoolCpuCount = parseInt(process.env.POOL_CPU_COUNT!);
+        config.PoolMemoryInGB = parseFloat(process.env.POOL_MEM_GB!);
+        config.PoolContainerImageTag = process.env.POOL_CONTAINER_IMAGE_TAG || "";
         return config;
     }
 }

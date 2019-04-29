@@ -92,6 +92,9 @@ export class ConfigurationDetails {
     ContainerRegistryUsername: string = "";
     ContainerRegistryPassword: string = "";
     PoolMinimumSize: number = 0;
+    PoolCpuCount: number = 0;
+    PoolMemoryInGB: number = 0;
+    PoolContainerImageTag: string = "";
 }
 
 export class ContainerGroupGridRow {
