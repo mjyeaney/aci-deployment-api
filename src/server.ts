@@ -104,20 +104,25 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
     logger.Write("Executing POST /api/deployments...");
     setNoCache(resp);
     
-    if ((!req.body) || (!req.body.numCpu) || (!req.body.memoryInGB)) {
-        logger.Write("Invalid request to /api/deployments");
-        resp.status(400).end();
+    if (!pool.PoolInitialized){
+        logger.Write("Pool not yet initialized - aborting request");
+        resp.status(503).end();
     } else {
-        // Note that 'tag' is optional
-        let tag = req.body.tag;
-        let numCpu = req.body.numCpu;
-        let memory = req.body.memoryInGB;
+        if ((!req.body) || (!req.body.numCpu) || (!req.body.memoryInGB)) {
+            logger.Write("Invalid request to /api/deployments");
+            resp.status(400).end();
+        } else {
+            // Note that 'tag' is optional
+            let tag = req.body.tag;
+            let numCpu = req.body.numCpu;
+            let memory = req.body.memoryInGB;
 
-        pool.GetPooledContainerInstance(numCpu, memory, tag).then((data: ContainerGroup) => {
-            resp.json(data);
-        }).catch((reason: any) => {
-            resp.status(500).json(reason);
-        });
+            pool.GetPooledContainerInstance(numCpu, memory, tag).then((data: ContainerGroup) => {
+                resp.json(data);
+            }).catch((reason: any) => {
+                resp.status(500).json(reason);
+            });
+        }
     }
 });
 
@@ -136,13 +141,18 @@ app.post("/api/deployments/:deploymentId/release", async (req: express.Request, 
     logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/release...`);
     setNoCache(resp);
 
-    aci.GetDeployment(req.params.deploymentId).then((containerGroup) => {
-        poolStateStore.UpdateMember(containerGroup.id!, false).then(() => {
-            resp.status(200).end();
-        }).catch((reason: any) => {
-            resp.status(500).json(reason);
+    if (!pool.PoolInitialized){
+        logger.Write("Pool not yet initialized - aborting request");
+        resp.status(503).end();
+    } else {
+        aci.GetDeployment(req.params.deploymentId).then((containerGroup) => {
+            poolStateStore.UpdateMember(containerGroup.id!, false).then(() => {
+                resp.status(200).end();
+            }).catch((reason: any) => {
+                resp.status(500).json(reason);
+            });
         });
-    });
+    }
 });
 
 app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, resp: express.Response) => {

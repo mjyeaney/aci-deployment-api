@@ -91,14 +91,6 @@ class MockContainerService implements IContainerService {
             resolve(new EmptyContainerGroup());
         });
     }
-    CreateNewDeploymentSync(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>{
-        return new Promise<ContainerGroup>((resolve) => {
-            if (PARALLEL_CALL_COUNT === 1) {
-                PARALLEL_CALL_COUNT--;
-            }
-            resolve(new EmptyContainerGroup());
-        });
-    }
     StopDeployment(containerGroupName: string): Promise<void>{
         throw new Error("method not implemented");
     }
@@ -106,16 +98,6 @@ class MockContainerService implements IContainerService {
         throw new Error("method not implemented");
     }
     GetFullConatinerDetails(): Promise<ContainerGroup[]>{
-        throw new Error("method not implemented");
-    }    
-    UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>{
-        return new Promise<void>((resolve) => {
-            LAST_TAG_UPDATE_RESOURCE_ID = deploymentResourceId;
-            LAST_TAG_UPDATE_VALUE = tagValue;
-            resolve();
-        });
-    }
-    GetDeploymentsByTag(tagName: string, tagValue: string): Promise<Array<string>>{
         throw new Error("method not implemented");
     }
 }

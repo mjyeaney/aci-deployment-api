@@ -15,6 +15,8 @@ export class ContainerInstancePool implements IContainerInstancePool {
     private configService: IConfigurationService;
     private logger: ILogger;
 
+    public PoolInitialized: boolean = false;
+
     constructor(poolStateStore: IPoolStateStore, containerService: IContainerService, configService: IConfigurationService, logger: ILogger) {
         this.poolStateStore = poolStateStore;
         this.containerService = containerService;
@@ -75,6 +77,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
             finally {
                 await lockfile.unlock(this.INIT_ROOT_FILE_PATH);
                 this.logger.Write(`Critical section finished for ::Initialize()`);
+                this.PoolInitialized = true;
             }
         });
     }

@@ -10,6 +10,7 @@ export interface ILogger {
 }
 
 export interface IContainerInstancePool {
+    PoolInitialized: boolean;
     Initialize(): Promise<void>;
     GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup>;
 }
@@ -27,7 +28,6 @@ export interface IContainerService {
     StopDeployment(containerGroupName: string): Promise<void>;
     DeleteDeployment(containerGroupName: string): Promise<void>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
-    UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>;
 }
 
 export interface IReportingService {

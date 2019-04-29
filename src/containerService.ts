@@ -131,32 +131,6 @@ export class ContainerService implements IContainerService {
         return groupStatus;
     }
 
-    public UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>{
-        return new Promise<void>(async (resolve, reject) => {
-            const start = Date.now();
-            
-            try {
-                await this.initializeArmClient();
-
-                let tagsObject: any = {};
-                tagsObject[tagName] = tagValue;
-
-                await this.armClient!.resources.updateById(deploymentResourceId, "2018-10-01", {
-                    tags: tagsObject
-                });
-
-                resolve();
-            } catch (err) {
-                this.logger.Write("*****Error in ::UpdateDeploymentTag*****");
-                this.logger.Write(JSON.stringify(err));
-                reject(err);
-            }
-
-            const duration = Date.now() - start;
-            this.logger.Write(`::UpdateDeploymentTag duration: ${duration} ms`);
-        });
-    }
-
     private getContainerGroupDescription(memoryInGB: number, numCpu: number, groupName: string, imageTag: string | undefined) {
         let imageName = this.settings.ContainerImage;
         if (imageTag) {
