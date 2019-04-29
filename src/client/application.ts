@@ -45,6 +45,9 @@ class Application implements IApplication {
             case "/deployments":
                 this.loadInstanceView();
                 break;
+            case "/pool-settings":
+                this.loadPoolSettings();
+                break;
         }
     }
 
@@ -86,6 +89,17 @@ class Application implements IApplication {
             const data = await this.api.LoadInstancesData();
             this.ui.ShowInstanceDetailData(data);
         }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
+    }
+
+    private async loadPoolSettings(){
+        // Stop any running timers
+        this.clearRefreshTimers();
+
+        // Load settings data
+        const config = await this.api.LoadConfigurationData();
+
+        // Render to form    
+        this.ui.ShowPoolStateForm(config);
     }
 
     private clearRefreshTimers(){

@@ -17,6 +17,7 @@ export interface IUiBinding
     ShowSummaryViewData(data: OverviewDetails): void;
     ShowInstanceDetailContent(): void;
     ShowInstanceDetailData(data: ContainerGroupGridRow[]): void;
+    ShowPoolStateForm(data: ConfigurationDetails): void;
 }
 
 export class UiBinding implements IUiBinding
@@ -93,5 +94,12 @@ export class UiBinding implements IUiBinding
     public ShowInstanceDetailData(data: ContainerGroupGridRow[]){
         const grid = new DeploymentsGrid();
         $("#deploymentsGrid").html(grid.Render(data));
+    }
+
+    public ShowPoolStateForm(data: ConfigurationDetails) {
+        $(".content").hide();
+        $("#poolStateForm").show();
+
+        // bind/render data
     }
 }
