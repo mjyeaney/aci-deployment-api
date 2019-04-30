@@ -100,6 +100,9 @@ export class UiBinding implements IUiBinding
         $(".content").hide();
         $("#poolStateForm").show();
 
-        // bind/render data
+        $("#poolSettings-size").val(data.PoolMinimumSize);
+        $("#poolSettings-cpu").val(data.PoolCpuCount);
+        $("#poolSettings-mem").val(data.PoolMemoryInGB);
+        $("#poolSettings-tag").val(data.PoolContainerImageTag);
     }
 }

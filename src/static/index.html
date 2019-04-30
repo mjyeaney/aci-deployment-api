@@ -89,13 +89,38 @@
         </div>
 
         <div class="content" id="instanceDetails">
-            <h3>Current Deployments - Details</h3>
+            <h3>Current Deployments</h3>
 
             <div class="tableWidget" id="deploymentsGrid"></div>
         </div>
 
         <div class="content" id="poolStateForm">
-            <h3>Container Instance Pool - Configuration</h3>
+                <h3>Pool Configuration</h3>
+
+                <p>The details below represent the current running configuration of the ACI resource pool. Note that these settings current can only be changed
+                    by modifying the App Settings either via the Azure Portal or the CLI/PowerShell. Later releases may include functionality to allow updates to
+                    these settings.</p>
+                
+                <ol class="form">
+                    <li>
+                        <label for="poolSettings-size">Pool Size</label>
+                        <input id="poolSettings-size" name="poolSettings-size" type="number" value="" min="1" readonly step="1" />
+                    </li>
+                    <li>
+                        <label for="poolSettings-cpu">Default CPU Count</label>
+                        <input id="poolSettings-cpu" name="poolSettings-cpu" type="number" value="" min="1" readonly step="1" />
+                    </li>
+                    <li>
+                        <label for="poolSettings-mem">Default Memory (GB)</label>
+                        <input id="poolSettings-mem" name="poolSettings-mem" type="number" value="" readonly min=".5" step="0.5" />
+                    </li>
+                    <li>
+                        <label for="poolSettings-tag">Default Container Tag</label>
+                        <input id="poolSettings-tag" name="poolSettings-tag" type="text" value="" readonly />
+                    </li>
+                </ol>
+    
+                <div id="poolHitRatioChart" class="chartContainer"></div>
         </div>
     </body>
 

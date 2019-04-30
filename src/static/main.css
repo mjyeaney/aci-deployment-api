@@ -161,3 +161,10 @@ p { margin-bottom: 1em; }
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+ol.form {
+    list-style-type: none;
+}
+ol.form li { margin-bottom: 1em; }
+ol.form label { display: block; font-size: .875em; color: #666;}
+ol.form input { display: block; width: 20em; padding: 0; line-height: 2em;}

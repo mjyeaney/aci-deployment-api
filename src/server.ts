@@ -65,7 +65,10 @@ app.get("/api/overviewSummary", async (req: express.Request, resp: express.Respo
 app.get("/api/configuration", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/configuration...");
     setNoCache(resp);
-    resp.json(config.GetConfiguration());
+    let settings = config.GetConfiguration();
+    settings.ClientId = "REDACTED";
+    settings.ClientSecret = "REDACTED";
+    resp.json(settings);
 });
 
 app.get("/api/authinfo", async (req: express.Request, resp: express.Response) => {

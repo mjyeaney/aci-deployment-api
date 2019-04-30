@@ -8,18 +8,18 @@ export class DeploymentsGrid {
         return `
         <table>
             <colgroup>
+                <col width="100px" />
                 <col width="20%" />
                 <col width="*" />
-                <col width="250px" />
-                <col width="100px" />
+                <col width="350px" />
                 <col width="100px" />
                 <col width="100px" />
             </colgroup>
             <tr>
+                <th>In Use</th>
                 <th>Container Group Name</th>
                 <th>IP Address</th>
                 <th>Image Name</th>
-                <th>In Use</th>
                 <th>CPU Count</th>
                 <th>Memory (GB)</th>
             </tr>
@@ -32,15 +32,23 @@ export class DeploymentsGrid {
         const markup = data.map((item: ContainerGroupGridRow) => {
             return `
             <tr>
+                <td>${this.getInUseMarkup(item.InUse)}</td>
                 <td>${item.Name}</td>
                 <td>${item.IpAddress ? item.IpAddress : "Unassigned"}</td>
                 <td>${item.Image}</td>
-                <td>${item.InUse ? "Yes" : "No"}</td>
                 <td>${item.CpuCount}</td>
                 <td>${item.MemoryInGB}</td>
             </tr>
             `;
         });
         return markup.join('');
+    }
+
+    private getInUseMarkup(inUse: boolean | undefined): string {
+        if (inUse) {
+            return "<i class=\"fas fa-check\"></i>";
+        } else {
+            return "";
+        }
     }
 }
