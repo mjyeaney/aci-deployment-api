@@ -18,6 +18,7 @@ export interface IContainerInstancePool {
 export interface IPoolStateStore {
     GetFreeMemberIDs(): Promise<Array<string>>;
     GetInUseMemberIDs(): Promise<Array<string>>;
+    RemoveMember(memberId: string): Promise<void>;
     UpdateMember(memberId: string, inUse: boolean): Promise<void>;
 }
 

@@ -43,6 +43,31 @@ export class PoolStateStore implements IPoolStateStore {
             }
         });
     }
+
+    public RemoveMember(memberId: string): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            let acquiredLock: boolean = false;
+            this.logger.Write(`Removing state for member: ${memberId}...`);
+
+            try {
+                await this.LockStore();
+                acquiredLock = true;
+
+                this.readSync();
+                this.inUse.delete(memberId);
+                this.free.delete(memberId);
+                this.flushSync();
+
+                resolve();
+            } catch (err) {
+                reject(err);
+            } finally {
+                if (acquiredLock){
+                    await this.UnlockStore();
+                }
+            }
+        });
+    }
     
     public UpdateMember(memberId: string, inUse: boolean): Promise<void> {
         return new Promise<void>(async (resolve, reject) => {

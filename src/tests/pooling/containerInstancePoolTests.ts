@@ -46,6 +46,9 @@ class MockPoolStateStore implements IPoolStateStore {
             resolve();
         });
     }
+    RemoveMember(memberId: string): Promise<void> {
+        throw "Method not implemented";
+    }
 }
 
 class EmptyContainerGroup implements ContainerGroup {

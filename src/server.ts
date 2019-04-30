@@ -163,12 +163,12 @@ app.post("/api/deployments/:deploymentId/release", async (req: express.Request, 
         logger.Write("Pool not yet initialized - aborting request");
         resp.status(503).end();
     } else {
-        aci.GetDeployment(req.params.deploymentId).then((containerGroup) => {
-            poolStateStore.UpdateMember(containerGroup.id!, false).then(() => {
-                resp.status(200).end();
-            }).catch((reason: any) => {
-                resp.status(500).json(reason);
-            });
+        aci.GetDeployment(req.params.deploymentId).then(async (containerGroup) => {
+            await   poolStateStore.UpdateMember(containerGroup.id!, false)
+        }).then(() => {
+            resp.status(200).end();
+        }).catch((reason: any) => {
+            resp.status(500).json(reason);
         });
     }
 });
@@ -188,7 +188,10 @@ app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: 
     logger.Write(`Executing DELETE /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
     
-    aci.DeleteDeployment(req.params.deploymentId).then(() => {
+    aci.GetDeployment(req.params.deploymentId).then(async (containerGroup) => {
+        await poolStateStore.RemoveMember(containerGroup.id!);
+        await aci.DeleteDeployment(containerGroup.name!);
+    }).then(() => {
         resp.status(200).end();
     }).catch((reason: any) => {
         resp.status(500).json(reason);
