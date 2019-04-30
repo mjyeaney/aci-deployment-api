@@ -162,6 +162,10 @@ p { margin-bottom: 1em; }
     text-overflow: ellipsis;
 }
 
+.tableWidget table td.centered {
+    text-align: center;
+}
+
 ol.form {
     list-style-type: none;
 }

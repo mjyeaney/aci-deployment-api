@@ -11,7 +11,7 @@ export class DeploymentsGrid {
                 <col width="100px" />
                 <col width="20%" />
                 <col width="*" />
-                <col width="350px" />
+                <col width="250px" />
                 <col width="100px" />
                 <col width="100px" />
             </colgroup>
@@ -32,7 +32,7 @@ export class DeploymentsGrid {
         const markup = data.map((item: ContainerGroupGridRow) => {
             return `
             <tr>
-                <td>${this.getInUseMarkup(item.InUse)}</td>
+                <td class="centered">${this.getInUseMarkup(item.InUse)}</td>
                 <td>${item.Name}</td>
                 <td>${item.IpAddress ? item.IpAddress : "Unassigned"}</td>
                 <td>${item.Image}</td>
