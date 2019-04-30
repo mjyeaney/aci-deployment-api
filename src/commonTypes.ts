@@ -108,3 +108,8 @@ export class ContainerGroupGridRow {
     OsType?: string;
     InUse?: boolean;
 }
+
+export class PoolStatus {
+    Free: Array<string> = [];
+    InUse: Array<string> = [];
+}

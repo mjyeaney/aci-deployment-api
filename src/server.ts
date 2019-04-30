@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, IContainerService, IReportingService, ITaskRunner, IPoolStateStore, IContainerInstancePool } from "./commonTypes";
+import { ILogger, IContainerService, IReportingService, ITaskRunner, IPoolStateStore, IContainerInstancePool, PoolStatus } from "./commonTypes";
 import { ConsoleLogger } from "./logging";
 import { ConfigurationService, IConfigurationService } from "./configService";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
@@ -104,12 +104,8 @@ app.get("/api/poolStatus", async (req: express.Request, resp: express.Response) 
     logger.Write("Executing GET /api/poolStatus...");
     setNoCache(resp);
 
-    let poolStatus: { Free: string[], InUse: string[] } = {
-        Free: [],
-        InUse: []
-    };
-
     try {
+        let poolStatus = new PoolStatus();
         poolStatus.Free = await poolStateStore.GetFreeMemberIDs();
         poolStatus.InUse = await poolStateStore.GetInUseMemberIDs();
         resp.json(poolStatus);

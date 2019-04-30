@@ -4,7 +4,7 @@
 // NOTE: The UI manipulatino needs fatored out of here..just copy/pasta'd for now.
 //
 
-import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../commonTypes";
+import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo, PoolStatus } from "../commonTypes";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
 export interface IServiceApi {
@@ -64,10 +64,17 @@ export class ServiceApi implements IServiceApi {
         return new Promise<ContainerGroupGridRow[]>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("GET", "/api/deployments");
-            xhr.onload = () => {
+            xhr.onload = async () => {
                 if (xhr.status === 200){
                     const payload: any[] = JSON.parse(xhr.responseText);
                     const data: ContainerGroupGridRow[] = [];
+
+                    // Load pool status data
+                    const poolStatus = await this.LoadPoolStatusData();
+                    const freeList = new Set(poolStatus.Free);
+                    const inUseList =new Set(poolStatus.InUse);
+
+                    // unwrap container group data
                     payload.map((item: ContainerGroup) => {
                         let row = new ContainerGroupGridRow();
                         row.Name = item.name!;
@@ -79,14 +86,35 @@ export class ServiceApi implements IServiceApi {
                         row.Status = "Unknown";
 
                         // Leverage tags for pool status
-                        if ((item.tags) && (item.tags!["ITMods-PoolStatus"])){
-                            row.InUse = (item.tags!["ITMods-PoolStatus"] === "InUse");
-                        } else {
+                        if (freeList.has(item.id!)){
                             row.InUse = false;
+                        }
+
+                        if (inUseList.has(item.id!)){
+                            row.InUse = true;
                         }
 
                         data.push(row);
                     });
+                    resolve(data);
+                } else {
+                    reject(xhr.statusText);
+                }
+            };
+            xhr.send();
+        });
+    }
+
+    public LoadPoolStatusData() {
+        return new Promise<PoolStatus>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/poolStatus");
+            xhr.onload = () => {
+                if (xhr.status === 200){
+                    const payload: PoolStatus = JSON.parse(xhr.responseText);
+                    const data: PoolStatus = new PoolStatus();
+                    data.Free = payload.Free;
+                    data.InUse = payload.InUse;
                     resolve(data);
                 } else {
                     reject(xhr.statusText);
