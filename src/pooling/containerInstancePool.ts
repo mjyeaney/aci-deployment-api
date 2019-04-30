@@ -37,13 +37,19 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 const config = this.configService.GetConfiguration();
 
                 // 1.   Load saved config of pool
-                this.logger.Write("Reading pool members...");
+                this.logger.Write("Reading pool member state...");
                 const freeMembers = await this.poolStateStore.GetFreeMemberIDs();
-                const n = freeMembers.length;
 
-                // 2. If (n < POOL_MINIMUM_SIZE), create new instances up to that size
-                this.logger.Write(`Found ${n} free members..`);
-                const membersToCreate = Math.max((config.PoolMinimumSize - n), 0);
+                // 2.   Read current phsical deployments
+                this.logger.Write("Reading deployments...");
+                const deployments = await this.containerService.GetDeployments();
+
+                // TODO: Normalize cluster state based on physical deployments
+                // (i.e., remove any cluster state members that are NOT in the physical list).
+
+                // 3. If (n < POOL_MINIMUM_SIZE), create new instances up to that size
+                this.logger.Write(`Found ${freeMembers.length} free members..`);
+                const membersToCreate = Math.max((config.PoolMinimumSize - freeMembers.length), 0);
 
                 this.logger.Write(`Scheduling creation of ${membersToCreate} new members..`);
                 const tasks: Array<Promise<void>> = [];
@@ -65,7 +71,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     })());
                 }
 
-                // Wait for all work to finish
+                // Wait for any scheduled work to finish
                 await Promise.all(tasks);
 
                 // Done

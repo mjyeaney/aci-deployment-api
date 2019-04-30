@@ -100,6 +100,24 @@ app.get("/api/deployments", async (req: express.Request, resp: express.Response)
     });
 });
 
+app.get("/api/poolStatus", async (req: express.Request, resp: express.Response) => {
+    logger.Write("Executing GET /api/poolStatus...");
+    setNoCache(resp);
+
+    let poolStatus: { Free: string[], InUse: string[] } = {
+        Free: [],
+        InUse: []
+    };
+
+    try {
+        poolStatus.Free = await poolStateStore.GetFreeMemberIDs();
+        poolStatus.InUse = await poolStateStore.GetInUseMemberIDs();
+        resp.json(poolStatus);
+    } catch (err) {
+        resp.status(500).json(err);
+    }
+});
+
 app.post("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing POST /api/deployments...");
     setNoCache(resp);
