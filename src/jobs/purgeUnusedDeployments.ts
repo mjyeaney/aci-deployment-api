@@ -56,6 +56,7 @@ export class PurgeUnusedDeployments implements ITask {
             // Until we implement singleton locking, mutliple nodes may be running this 
             // code, causing a 404 on certain delete calls. 
             try {
+                await this.poolStateStore.RemoveMember(d.id!);
                 await this.aci.DeleteDeployment(d.name!);
             }
             catch (err){
