@@ -20,10 +20,26 @@ When a client requests an ACI compute resource, the following decision tree is f
 * If the requested CPU, memory, and Docker image tag all match the current pool configuration (governed by `POOL_CPU_COUNT`, `POOL_MEM_GB`, and `POOL_CONTAINER_IMAGE_TAG`), proceed. Otherwise, begine a synchronous / blocking deployment (client will have to wait until deployment is finished).
 * If `N > POOL_MINIMUM_SIZE`, the first instance (sorted lexicographicly) is returned to the client and marked as "in use".
 * If `N < POOL_MINIMUM_SIZE` _and_ `N > 0`, the first instance (sorted lexicographicly) is returned to the client and marked as "in use". Additionally, a background task is started to replace this in-use instance in order to re-populate the pool.
-* If `N = 0`, an error is returned to the client that there are currently no available instances. A background task is started to replace this in-use instance in order to re-populate the pool.
+* If `N = 0`, an error is returned to the client that there are currently no available instances. Clients may try again later to see if the pool refreshing has completed.
 
-### Garbage Colleciton
+### Pool Initialization
 
-For additional context, see [Issue #19](https://github.com/mjyeaney/aci-deployment-api/issues/19#issue-399963094).
+During applicaiton startup, a single node will attempt to initialze the pool, using the following procedure:
 
-Since container re-use is predicated on the `image` property of a container group, the re-use implementation will discrimitate between identical container images that have different tags, due to the fact that there is currently no seperate field for tag. Because of this, older tagged containers that are stopped or terminated will build up in the system not be reused, leading too a build-up of old deployments. To combat this, there is a background scavenger (implemented in `/src/cleanup-tasks.ts`) that will look for any conatainer deployments that have been `stopped` or `terminted` for at least 4 hours, and if any are found, delete them. 
+* Check the stored pool state and check if the pool has already been initialzied by another member. If not, proceed.
+* Read the currently known in-use and free member lists
+* Read any currently deployed ACI resources.
+* Compare the saved pool state to the running deployments:
+    * If there are any deployments in pool state which are *NOT* currently deployed, remove them from pool state.
+    * If there are deployed resources which are *NOT* tracked in pool state, leave them alone (as they may be in use elsewhere).
+* Using this modified pool state, note if any additional free instances are needed to be in compliance with `POOL_MINIMUM_SIZE`.
+    * If so, create background tasks to create these instances.
+
+### Garbage Collection / Scheduled Tasks
+
+In order to maintain acceptable numbers of pooled deployments, there are is a scheduled task that is in charge of maintaining the overall health of the ACI pool. The current primary use case for this job is as follows.
+
+1. Read all currently running instances, and get their full status.
+1. If there are any ACI instances that are stopped / terminated:
+    * Delete these instances
+    * If the number of free instances is less than the configured value (`POOL_MINIMUM_SIZE`), create a new deployment to replace this deleted member.
