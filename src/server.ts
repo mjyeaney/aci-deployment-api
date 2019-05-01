@@ -22,7 +22,7 @@ const aci: IContainerService = new ContainerService(logger, config);
 const poolStateStore: IPoolStateStore = new PoolStateStore(logger);
 const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
 const reporting: IReportingService = new ReportingService(logger, config, poolStateStore);
-const taskRunner: ITaskRunner = new DefaultTaskRunner(logger, aci, poolStateStore);
+const taskRunner: ITaskRunner = new DefaultTaskRunner(logger, pool, aci);
 
 // Startup background tasks
 pool.Initialize();
@@ -166,9 +166,7 @@ app.post("/api/deployments/:deploymentId/release", async (req: express.Request, 
         logger.Write("Pool not yet initialized - aborting request");
         resp.status(503).end();
     } else {
-        aci.GetDeployment(req.params.deploymentId).then(async (containerGroup) => {
-            await   poolStateStore.UpdateMember(containerGroup.id!, false)
-        }).then(() => {
+        pool.ReleasePooledConatainerInstance(req.params.deploymentId).then(() => {
             resp.status(200).end();
         }).catch((reason: any) => {
             resp.status(500).json(reason);
@@ -191,10 +189,7 @@ app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: 
     logger.Write(`Executing DELETE /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
     
-    aci.GetDeployment(req.params.deploymentId).then(async (containerGroup) => {
-        await poolStateStore.RemoveMember(containerGroup.id!);
-        await aci.DeleteDeployment(containerGroup.name!);
-    }).then(() => {
+    pool.RemovePooledContainerInstance(req.params.deploymentId).then(() => {
         resp.status(200).end();
     }).catch((reason: any) => {
         resp.status(500).json(reason);

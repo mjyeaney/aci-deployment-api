@@ -4,20 +4,20 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ContainerGroupStatus, ITask, TaskScheduleInfo, IPoolStateStore } from "../commonTypes";
+import { ILogger, ContainerGroupStatus, ITask, TaskScheduleInfo, IContainerInstancePool, IContainerService } from "../commonTypes";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
-export class PurgeUnusedDeployments implements ITask {
+export class PurgeStoppedDeployments implements ITask {
+    private readonly poolService: IContainerInstancePool;
     private readonly aci: IContainerService;
-    private readonly poolStateStore: IPoolStateStore;
     private readonly logger: ILogger;
 
     public Name: string = "PurgeUnusedDeployments";
     
-    constructor(logger: ILogger, aci: IContainerService, poolStateStore: IPoolStateStore){
+    constructor(logger: ILogger, pool: IContainerInstancePool, aci: IContainerService){
         this.logger = logger;
+        this.poolService = pool;
         this.aci = aci;
-        this.poolStateStore = poolStateStore;
     }
 
     public GetScheduleInfo(): TaskScheduleInfo {
@@ -56,35 +56,11 @@ export class PurgeUnusedDeployments implements ITask {
             // Until we implement singleton locking, mutliple nodes may be running this 
             // code, causing a 404 on certain delete calls. 
             try {
-                await this.poolStateStore.RemoveMember(d.id!);
-                await this.aci.DeleteDeployment(d.name!);
+                await this.poolService.RemovePooledContainerInstance(d.id!);
             }
             catch (err){
                 this.logger.Write(`[ERROR] - ${JSON.stringify(err)}`);
             }
         }
-
-        // TODO: Replace deleted instances with new members, and mark them as available
-        const tasks: Array<Promise<void>> = [];
-        for (let c = 0; c < itemsToRemove.length; c++){
-            // Firing these creates in parallel to minmize delays
-            tasks.push((async() => {
-                try {
-                    // TODO: What spec to initialize with? Guessing with 2x2 for now
-                    // NOTE: This is a 'sync' creation, because the ARM/MSREST lib won't allow an update 
-                    // while another update is pending (even though it works).
-                    this.logger.Write(`Creating replacement member ${c}...`);
-                    let newMember = await this.aci.CreateNewDeployment(2, 2, undefined);
-
-                    this.logger.Write(`Done - adding member '${newMember.id}' to pool state store`);
-                    await this.poolStateStore.UpdateMember(newMember.id!, false);
-                } catch (err) {
-                    this.logger.Write(`**********ERROR during cleanup background task**********: ${JSON.stringify(err)}`);
-                }
-            })());
-        }
-
-        // Wait for all work to finish before returning
-        await Promise.all(tasks);
     }
 }

@@ -13,6 +13,8 @@ export interface IContainerInstancePool {
     PoolInitialized: boolean;
     Initialize(): Promise<void>;
     GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup>;
+    RemovePooledContainerInstance(deploymentId: string): Promise<void>;
+    ReleasePooledConatainerInstance(deploymentId: string): Promise<void>;
 }
 
 export interface IPoolStateStore {

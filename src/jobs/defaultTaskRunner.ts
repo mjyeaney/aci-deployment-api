@@ -4,21 +4,21 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ITaskRunner, ITask, IPoolStateStore } from "../commonTypes";
-import { PurgeUnusedDeployments } from "./purgeUnusedDeployments";
+import { ILogger, IContainerService, ITaskRunner, ITask, IPoolStateStore, IContainerInstancePool } from "../commonTypes";
+import { PurgeStoppedDeployments } from "./purgeStoppedDeployments";
 import * as moment from "moment";
 
 export class DefaultTaskRunner implements ITaskRunner {
     private readonly logger: ILogger;
     private tasks: ITask[] = [];
 
-    constructor(logger: ILogger, aci: IContainerService, poolStateStore: IPoolStateStore){
+    constructor(logger: ILogger, pool: IContainerInstancePool, aci: IContainerService){
         this.logger = logger;
 
         // Add known tasks - later, we can dynamically enumerate these tasks 
         // and filter by those which are enabled / etc.
         this.logger.Write("Adding tasks to DefaultTaskRunner");
-        this.tasks.push(new PurgeUnusedDeployments(logger, aci, poolStateStore));
+        this.tasks.push(new PurgeStoppedDeployments(logger, pool, aci));
     }
 
     public ScheduleAll(): void {

@@ -25,7 +25,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
     }
 
     // InitializePool
-    public async Initialize(): Promise<void> {
+    public Initialize(): Promise<void> {
         return new Promise<void>(async (resolve, reject) => {
             let lockAcquired: boolean = false;
             try {
@@ -92,10 +92,13 @@ export class ContainerInstancePool implements IContainerInstancePool {
     }
 
     // Get Pooled ContainerGgroup
-    public async GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup> {
+    public GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup> {
         return new Promise<ContainerGroup>(async (resolve, reject) => {
             let lockAcquired: boolean = false;
             try {
+                // TODO: Verify that cpu/memory/image match pool settings
+
+                // Acquire singleton mutex
                 await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
                 lockAcquired = true;
                 this.logger.Write(`Entered critical section for ::GetPooledContainerInstance`);
@@ -168,5 +171,30 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 }
             }
         });
+    }
+
+    public RemovePooledContainerInstance(deploymentId: string): Promise<void>{
+        return new Promise<void>(async (resolve, reject) => {
+            try {
+                let deployment = await this.containerService.GetDeployment(deploymentId);
+                await this.poolStateStore.RemoveMember(deployment.id!);
+                await this.containerService.DeleteDeployment(deployment.name!);
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    public ReleasePooledConatainerInstance(deploymentId: string): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            try {
+                let deployment = await this.containerService.GetDeployment(deploymentId);
+                await this.poolStateStore.UpdateMember(deployment.id!, false);
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+        })
     }
 }
