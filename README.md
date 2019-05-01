@@ -9,7 +9,7 @@ The target use case for this sample application is client applications (i.e., mo
 ### Additional Topics
 
 * [Architecture Overview](docs/ArchitectureOverview.md)
-* [Container Group Pooling](docs/ContainerGroupReuse.md)
+* [Container Group Pooling](docs/ContainerGroupPooling.md)
 * [Container Group Naming](docs/ContainerGroupNaming.md)
 * [Reporting Overview](docs/ReportingOverview.md)
 
