@@ -27,9 +27,11 @@ export class ContainerInstancePool implements IContainerInstancePool {
     // InitializePool
     public async Initialize(): Promise<void> {
         return new Promise<void>(async (resolve, reject) => {
+            let lockAcquired: boolean = false;
             try {
                 // This only should run on a single instance
-                await lockfile.lock(this.INIT_ROOT_FILE_PATH);
+                await lockfile.lock(this.INIT_ROOT_FILE_PATH, { retries: 5 });
+                lockAcquired = true;
                 this.logger.Write(`Entered critical section for ::Initialize()`);
 
                 // 0.   Read base configuration
@@ -80,9 +82,11 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 reject(err);
             }
             finally {
-                await lockfile.unlock(this.INIT_ROOT_FILE_PATH);
-                this.logger.Write(`Critical section finished for ::Initialize()`);
-                this.PoolInitialized = true;
+                if (lockAcquired){
+                    await lockfile.unlock(this.INIT_ROOT_FILE_PATH);
+                    this.logger.Write(`Critical section finished for ::Initialize()`);
+                    this.PoolInitialized = true;
+                }
             }
         });
     }
@@ -90,8 +94,10 @@ export class ContainerInstancePool implements IContainerInstancePool {
     // Get Pooled ContainerGgroup
     public async GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup> {
         return new Promise<ContainerGroup>(async (resolve, reject) => {
+            let lockAcquired: boolean = false;
             try {
-                await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5 });
+                await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
+                lockAcquired = true;
                 this.logger.Write(`Entered critical section for ::GetPooledContainerInstance`);
 
                 // 0.   Read base configuration
@@ -175,8 +181,10 @@ export class ContainerInstancePool implements IContainerInstancePool {
             } catch (err) {
                 reject(err);
             } finally {
-                await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
-                this.logger.Write(`Critical section finished for ::GetPooledContainerInstance()`);
+                if (lockAcquired){
+                    await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
+                    this.logger.Write(`Critical section finished for ::GetPooledContainerInstance()`);
+                }
             }
         });
     }

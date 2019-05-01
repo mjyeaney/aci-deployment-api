@@ -162,6 +162,12 @@ p { margin-bottom: 1em; }
     text-overflow: ellipsis;
 }
 
+.tableWidget table th {
+    font-weight: normal;
+    font-size: .875em;
+    color: #666;
+}
+
 .tableWidget table td.centered {
     text-align: center;
 }
