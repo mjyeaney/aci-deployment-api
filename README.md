@@ -34,7 +34,7 @@ The following API methods are exposed from this application:
 * `DELETE /api/deployments/{deployment-name}`
     * This removes (deletes) the specified deployment. Note this does *NOT* stop the instance; rather the entire container group resource is deleted.
 * `POST /api/deployments/{deployment-name}/stop`
-    * This stops (but does not delete) the specified deployment. Note stopped deployments may be re-used later (see [Container Group Reuse](docs/ContainerGroupReuse.md))
+    * This stops (but does not delete) the specified deployment.
 * `POST /api/deployments/{deployment-name}/release`
     * This releases the specified instance back into the pool for re-use. Note this may not be applicable to all containers (as the container itself needs to support re-use).
 * `GET /api/configuration`
