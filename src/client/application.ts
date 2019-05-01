@@ -2,10 +2,9 @@
 // Core application orchestration logic.
 //
 
-import { IUiBinding, UiBinding } from "./ui-binding";
-import { IServiceApi, ServiceApi } from "./service-api";
+import { IUiBinding, UiBinding } from "./uiBinding";
+import { IServiceApi, ServiceApi } from "./serviceApi";
 import { LineChart } from "./charting";
-import { ConsoleLogger } from "../logging";
 
 interface IApplication
 {
@@ -40,11 +39,13 @@ class Application implements IApplication {
         console.log(`Item selected: ${path}`);
         switch (path){
             case "/overview":
-                this.loadConfigView();
                 this.loadSummaryView();
                 break;
             case "/deployments":
                 this.loadInstanceView();
+                break;
+            case "/pool-settings":
+                this.loadPoolSettings();
                 break;
         }
     }
@@ -54,11 +55,6 @@ class Application implements IApplication {
         this.ui.ShowUserInfo(authInfo);
     }
 
-    private async loadConfigView(){
-        const config = await this.api.LoadConfigurationData();
-        this.ui.ShowConfigurationData(config);
-    }
-
     private async loadSummaryView(){
         this.clearRefreshTimers();
         this.ui.ShowOverviewContent();
@@ -66,11 +62,19 @@ class Application implements IApplication {
         const data = await this.api.LoadSummaryData();
         this.ui.ShowSummaryViewData(data);
 
+        const config = await this.api.LoadConfigurationData();
+        this.ui.ShowConfigurationData(config);
+
         console.log("Setting up overview timer...");
         this.overviewTimer = setInterval(async () => {
             console.log("Overview timer fired!!!");
+            
             const data = await this.api.LoadSummaryData();
             this.ui.ShowSummaryViewData(data);
+
+            const config = await this.api.LoadConfigurationData();
+            this.ui.ShowConfigurationData(config);
+
         }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
     }
 
@@ -84,9 +88,22 @@ class Application implements IApplication {
         console.log("Setting up grid timer...");
         this.instanceGridTimer = setInterval(async () => {
             console.log("Grid timer fired!!!!");
+
             const data = await this.api.LoadInstancesData();
             this.ui.ShowInstanceDetailData(data);
+            
         }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
+    }
+
+    private async loadPoolSettings(){
+        // Stop any running timers
+        this.clearRefreshTimers();
+
+        // Load settings data
+        const config = await this.api.LoadConfigurationData();
+
+        // Render to form    
+        this.ui.ShowPoolStateForm(config);
     }
 
     private clearRefreshTimers(){

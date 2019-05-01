@@ -4,8 +4,8 @@
 
 import * as $ from "jquery";
 import { IChart, LineChart } from "./charting";
-import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../common-types";
-import { DeploymentsGrid } from "./deployments-grid";
+import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo, ConfigurationWithStatus } from "../commonTypes";
+import { DeploymentsGrid } from "./deploymentsGrid";
 
 export interface IUiBinding
 {
@@ -17,6 +17,7 @@ export interface IUiBinding
     ShowSummaryViewData(data: OverviewDetails): void;
     ShowInstanceDetailContent(): void;
     ShowInstanceDetailData(data: ContainerGroupGridRow[]): void;
+    ShowPoolStateForm(data: ConfigurationDetails): void;
 }
 
 export class UiBinding implements IUiBinding
@@ -58,7 +59,7 @@ export class UiBinding implements IUiBinding
         $("#overviewContent").show();
     }
 
-    public ShowConfigurationData(data: ConfigurationDetails) {
+    public ShowConfigurationData(data: ConfigurationWithStatus) {
         $("#config_tenant_id span").text(data.TenantId!);
         $("#config_subscription_id span").text(data.SubscriptionId!);
         $("#config_region span").text(data.Region!);
@@ -68,21 +69,22 @@ export class UiBinding implements IUiBinding
         $("#config_container_port span").text(data.ContainerPort!);
         $("#config_container_os span").text(data.ContainerOs!);
         $("#config_report_interval span").text(data.ReportingRefreshInterval!);
+        $("#config_current_status span").text(data.CurrentStatus!);
     }
 
     public ShowSummaryViewData(data: OverviewDetails){
-        $("#runningInstanceChart").html(this.lineChartGenerator.Render(data.RunningInstanceCounts));
-        $("#stoppedInstanceChart").html(this.lineChartGenerator.Render(data.StoppedInstanceCounts));
+        $("#inUseInstanceChart").html(this.lineChartGenerator.Render(data.InUseInstanceCounts));
+        $("#freeInstanceChart").html(this.lineChartGenerator.Render(data.FreeInstanceCounts));
 
-        $("#runningInstanceCount").text(data.RunningInstances);
-        $("#running-min").text(data.RunningSummary.Minimum);
-        $("#running-avg").text(data.RunningSummary.Average.toFixed(2));
-        $("#running-max").text(data.RunningSummary.Maximum);
+        $("#inUseInstanceCount").text(data.InUseInstances);
+        $("#inUse-min").text(data.InUseSummary.Minimum);
+        $("#inUse-avg").text(data.InUseSummary.Average.toFixed(2));
+        $("#inUse-max").text(data.InUseSummary.Maximum);
         
-        $("#stoppedInstanceCount").text(data.StoppedInstances);
-        $("#stopped-min").text(data.StoppedSummary.Minimum);
-        $("#stopped-avg").text(data.StoppedSummary.Average.toFixed(2));
-        $("#stopped-max").text(data.StoppedSummary.Maximum);
+        $("#freeInstanceCount").text(data.FreeInstances);
+        $("#free-min").text(data.FreeSummary.Minimum);
+        $("#free-avg").text(data.FreeSummary.Average.toFixed(2));
+        $("#free-max").text(data.FreeSummary.Maximum);
     }
 
     public ShowInstanceDetailContent(){
@@ -93,5 +95,15 @@ export class UiBinding implements IUiBinding
     public ShowInstanceDetailData(data: ContainerGroupGridRow[]){
         const grid = new DeploymentsGrid();
         $("#deploymentsGrid").html(grid.Render(data));
+    }
+
+    public ShowPoolStateForm(data: ConfigurationDetails) {
+        $(".content").hide();
+        $("#poolStateForm").show();
+
+        $("#poolSettings-size").val(data.PoolMinimumSize);
+        $("#poolSettings-cpu").val(data.PoolCpuCount);
+        $("#poolSettings-mem").val(data.PoolMemoryInGB);
+        $("#poolSettings-tag").val(data.PoolContainerImageTag);
     }
 }

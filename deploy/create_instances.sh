@@ -8,6 +8,6 @@ ACI_API_HOST="http://localhost:8009/api/deployments"
 for i in $(seq 1 5);
 do
     echo -n "Creating instance..."
-    curl -s -X POST -H 'Content-Type: application/json' --data '{"numCpu":2,"memoryInGB":2}' $ACI_API_HOST
+    curl -v -X POST -H 'Content-Type: application/json' --data '{"numCpu":2,"memoryInGB":2}' $ACI_API_HOST
     echo "done."
 done;

@@ -2,7 +2,7 @@
 // Basic logging implementions
 //
 
-import { ILogger } from "./common-types";
+import { ILogger } from "./commonTypes";
 
 export class ConsoleLogger implements ILogger
 {

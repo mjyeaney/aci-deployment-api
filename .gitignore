@@ -3,3 +3,4 @@
 **/.envbak
 dist
 *.log
+results.xml

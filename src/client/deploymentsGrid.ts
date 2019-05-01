@@ -1,20 +1,22 @@
 //
 // Implements redering of the deployments grid for our UI
 //
-import { ContainerGroupGridRow } from "../common-types";
+import { ContainerGroupGridRow } from "../commonTypes";
 
 export class DeploymentsGrid {
     public Render(data: ContainerGroupGridRow[]) {
         return `
         <table>
             <colgroup>
+                <col width="100px" />
                 <col width="20%" />
                 <col width="*" />
-                <col width="350px" />
+                <col width="250px" />
                 <col width="100px" />
                 <col width="100px" />
             </colgroup>
             <tr>
+                <th>In Use</th>
                 <th>Container Group Name</th>
                 <th>IP Address</th>
                 <th>Image Name</th>
@@ -30,6 +32,7 @@ export class DeploymentsGrid {
         const markup = data.map((item: ContainerGroupGridRow) => {
             return `
             <tr>
+                <td class="centered">${this.getInUseMarkup(item.InUse)}</td>
                 <td>${item.Name}</td>
                 <td>${item.IpAddress ? item.IpAddress : "Unassigned"}</td>
                 <td>${item.Image}</td>
@@ -39,5 +42,13 @@ export class DeploymentsGrid {
             `;
         });
         return markup.join('');
+    }
+
+    private getInUseMarkup(inUse: boolean | undefined): string {
+        if (inUse) {
+            return "<i class=\"fas fa-check\"></i>";
+        } else {
+            return "";
+        }
     }
 }

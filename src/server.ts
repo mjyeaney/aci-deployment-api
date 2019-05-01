@@ -1,35 +1,36 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, GroupMatchInformation, IPendingOperationCache, IGroupStrategy, IContainerService, IReportingService } from "./common-types";
+import { ILogger, IContainerService, IReportingService, ITaskRunner, IPoolStateStore, IContainerInstancePool, PoolStatus, ConfigurationWithStatus } from "./commonTypes";
 import { ConsoleLogger } from "./logging";
-import { ContainerService }  from "./container-service";
-import { ReportingService }  from "./reporting-service";
-import { ConfigurationService, IConfigService } from "./config-service";
+import { ConfigurationService, IConfigurationService } from "./configService";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
-import { PendingOperationCache } from "./pending-operation-cache";
-import { DefaultGroupStrategy } from "./default-group-strategy";
-import { ICleanupTaskRunner, CleanupTaskRunner } from "./cleanup-tasks";
+import { ContainerService }  from "./containerService";
+import { ContainerInstancePool } from "./pooling/containerInstancePool";
+import { PoolStateStore } from "./pooling/poolStateStore";
+import { ReportingService }  from "./reporting/reportingService";
+import { DefaultTaskRunner } from "./jobs/defaultTaskRunner";
 
 // Init environment
 dotenv.config();
 
 // Setup services
-const logger: ILogger = new ConsoleLogger();
-const config: IConfigService = new ConfigurationService();
 const app: express.Application = express();
-const pendingCache: IPendingOperationCache = new PendingOperationCache(logger);
-const groupStrategy: IGroupStrategy = new DefaultGroupStrategy(logger);
-const aci: IContainerService = new ContainerService(logger, config, groupStrategy, pendingCache);
-const reporting: IReportingService = new ReportingService(logger, config, aci);
-const cleanupManager: ICleanupTaskRunner = new CleanupTaskRunner(logger, pendingCache, aci);
+const logger: ILogger = new ConsoleLogger();
+const config: IConfigurationService = new ConfigurationService();
+const aci: IContainerService = new ContainerService(logger, config);
+const poolStateStore: IPoolStateStore = new PoolStateStore(logger);
+const pool: IContainerInstancePool = new ContainerInstancePool(poolStateStore, aci, config, logger);
+const reporting: IReportingService = new ReportingService(logger, config, poolStateStore);
+const taskRunner: ITaskRunner = new DefaultTaskRunner(logger, aci, poolStateStore);
 
-// Startup background jobs on this node
+// Startup background tasks
+pool.Initialize();
 reporting.Initialize();
-cleanupManager.ScheduleAll();
+taskRunner.ScheduleAll();
 
 // Enables parsing of application/x-www-form-urlencoded MIME type
-// and JSON
+// and JSON body payloads
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
@@ -48,28 +49,6 @@ const setNoCache = function(res: express.Response){
 };
 
 // 
-// Introspection API methods
-//
-app.post("/api/test/getGroupMatchInfo", async (req: express.Request, resp: express.Response) => {
-    setNoCache(resp);
-
-    aci.GetMatchingGroupInfo(req.body.numCpu, req.body.memoryInGB, req.body.tag).then((data: GroupMatchInformation) => {
-        resp.json(data);
-    }).catch((reason: any) => {
-        resp.status(500).json(reason);
-    });
-});
-app.get("/api/test/getPendingDeployments", async (req: express.Request, resp: express.Response) => {
-    setNoCache(resp);
-    
-    pendingCache.GetPendingOperations().then((names: string[]) => {
-        resp.json(names);
-    }).catch((reason: any) => {
-        resp.status(500).json(reason);
-    });
-});
-
-// 
 // Main API methods
 //
 app.get("/api/overviewSummary", async (req: express.Request, resp: express.Response) => {
@@ -82,11 +61,20 @@ app.get("/api/overviewSummary", async (req: express.Request, resp: express.Respo
         resp.status(500).json(reason);
     })
 });
+
 app.get("/api/configuration", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/configuration...");
     setNoCache(resp);
-    resp.json(config.GetConfiguration());
+    
+    let settings = config.GetConfiguration();
+    settings.ClientId = "REDACTED";
+    settings.ClientSecret = "REDACTED";
+
+    let settingsWithStatus = new ConfigurationWithStatus(settings);
+    settingsWithStatus.CurrentStatus = pool.PoolInitialized ? "Ready" : "Initializing";
+    resp.json(settingsWithStatus);
 });
+
 app.get("/api/authinfo", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/authinfo...");
     setNoCache(resp);
@@ -107,6 +95,7 @@ app.get("/api/authinfo", async (req: express.Request, resp: express.Response) =>
         PrincipalName: userPrincipalName
     });
 });
+
 app.get("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/deployments...");
     setNoCache(resp);
@@ -117,26 +106,47 @@ app.get("/api/deployments", async (req: express.Request, resp: express.Response)
         resp.status(500).json(reason);
     });
 });
+
+app.get("/api/poolStatus", async (req: express.Request, resp: express.Response) => {
+    logger.Write("Executing GET /api/poolStatus...");
+    setNoCache(resp);
+
+    try {
+        let poolStatus = new PoolStatus();
+        poolStatus.Free = await poolStateStore.GetFreeMemberIDs();
+        poolStatus.InUse = await poolStateStore.GetInUseMemberIDs();
+        resp.json(poolStatus);
+    } catch (err) {
+        resp.status(500).json(err);
+    }
+});
+
 app.post("/api/deployments", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing POST /api/deployments...");
     setNoCache(resp);
     
-    if ((!req.body) || (!req.body.numCpu) || (!req.body.memoryInGB)) {
-        logger.Write("Invalid request to /api/deployments");
-        resp.status(400).end();
+    if (!pool.PoolInitialized){
+        logger.Write("Pool not yet initialized - aborting request");
+        resp.status(503).end();
     } else {
-        // Note that 'tag' is optional
-        let tag = req.body.tag;
-        let numCpu = req.body.numCpu;
-        let memory = req.body.memoryInGB;
+        if ((!req.body) || (!req.body.numCpu) || (!req.body.memoryInGB)) {
+            logger.Write("Invalid request to /api/deployments");
+            resp.status(400).end();
+        } else {
+            // Note that 'tag' is optional
+            let tag = req.body.tag;
+            let numCpu = req.body.numCpu;
+            let memory = req.body.memoryInGB;
 
-        aci.CreateNewDeployment(numCpu, memory, tag).then((data: ContainerGroup) => {
-            resp.json(data);
-        }).catch((reason: any) => {
-            resp.status(500).json(reason);
-        });
+            pool.GetPooledContainerInstance(numCpu, memory, tag).then((data: ContainerGroup) => {
+                resp.json(data);
+            }).catch((reason: any) => {
+                resp.status(500).json(reason);
+            });
+        }
     }
 });
+
 app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing GET /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
@@ -147,6 +157,25 @@ app.get("/api/deployments/:deploymentId", async (req: express.Request, resp: exp
         resp.status(500).json(reason);
     });
 });
+
+app.post("/api/deployments/:deploymentId/release", async (req: express.Request, resp: express.Response) => {
+    logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/release...`);
+    setNoCache(resp);
+
+    if (!pool.PoolInitialized){
+        logger.Write("Pool not yet initialized - aborting request");
+        resp.status(503).end();
+    } else {
+        aci.GetDeployment(req.params.deploymentId).then(async (containerGroup) => {
+            await   poolStateStore.UpdateMember(containerGroup.id!, false)
+        }).then(() => {
+            resp.status(200).end();
+        }).catch((reason: any) => {
+            resp.status(500).json(reason);
+        });
+    }
+});
+
 app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing POST /api/deployments/${req.params.deploymentId}/stop...`);
     setNoCache(resp);
@@ -157,11 +186,15 @@ app.post("/api/deployments/:deploymentId/stop", async (req: express.Request, res
         resp.status(500).json(reason);
     });
 });
+
 app.delete("/api/deployments/:deploymentId", async (req: express.Request, resp: express.Response) => {
     logger.Write(`Executing DELETE /api/deployments/${req.params.deploymentId}...`);
     setNoCache(resp);
     
-    aci.DeleteDeployment(req.params.deploymentId).then(() => {
+    aci.GetDeployment(req.params.deploymentId).then(async (containerGroup) => {
+        await poolStateStore.RemoveMember(containerGroup.id!);
+        await aci.DeleteDeployment(containerGroup.name!);
+    }).then(() => {
         resp.status(200).end();
     }).catch((reason: any) => {
         resp.status(500).json(reason);
@@ -178,6 +211,6 @@ app.use(express.static(__dirname, {
 //
 // Init server listener loop
 //
-const server = app.listen(port, function () {
+app.listen(port, function () {
     logger.Write(`Server started - ready for requests`);
 });

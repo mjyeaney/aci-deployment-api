@@ -58,6 +58,7 @@ p { margin-bottom: 1em; }
 
 .nav ul { list-style-type: none; }
 .nav ul li a { text-decoration: none; color: #111; padding: .75em; display: block; cursor: pointer; }
+.nav ul li a i { margin-right: .5em; color: #555; }
 .nav ul li a:hover { background-color: #eee; }
 .nav ul li.active a { background-color: #ccc; }
 
@@ -160,3 +161,20 @@ p { margin-bottom: 1em; }
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.tableWidget table th {
+    font-weight: normal;
+    font-size: .875em;
+    color: #666;
+}
+
+.tableWidget table td.centered {
+    text-align: center;
+}
+
+ol.form {
+    list-style-type: none;
+}
+ol.form li { margin-bottom: 1em; }
+ol.form label { display: block; font-size: .875em; color: #666;}
+ol.form input { display: block; width: 20em; padding: 0; line-height: 2em;}

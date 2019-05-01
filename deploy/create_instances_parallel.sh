@@ -8,7 +8,7 @@ ACI_API_HOST="http://localhost:8009/api/deployments"
 echo -n "Creating instances in parallel..."
 for i in $(seq 1 5);
 do
-    curl -s -X POST -H 'Content-Type: application/json' --data '{"numCpu":2,"memoryInGB":2}' $ACI_API_HOST &
+    curl -X POST -H 'Content-Type: application/json' --data '{"numCpu":2,"memoryInGB":2}' $ACI_API_HOST &
 done;
 
 echo "Done! Waiting for processes to complete..."
