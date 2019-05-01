@@ -40,6 +40,11 @@ During applicaiton startup, a single node will attempt to initialze the pool, us
 In order to maintain acceptable numbers of pooled deployments, there are is a scheduled task that is in charge of maintaining the overall health of the ACI pool. The current primary use case for this job is as follows.
 
 1. Read all currently running instances, and get their full status.
-1. If there are any ACI instances that are stopped / terminated:
+2. If there are any ACI instances that are stopped / terminated:
     * Delete these instances
     * If the number of free instances is less than the configured value (`POOL_MINIMUM_SIZE`), create a new deployment to replace this deleted member.
+
+Another job that runs is responsible for maintaining acceptable levels of pool resources so as to not incur cost impacts from running un-utilized compute. This job workflow is as follows:
+
+1. Read all currently free instances.
+2. If there are more free instances than currently configured pool size (`POOL_MINIMUM_SIZE`), remove excess deployments.

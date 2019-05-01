@@ -104,8 +104,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 this.logger.Write("Reading base configuration...");
                 const config = this.configService.GetConfiguration();
 
-                // 1.	Read currently "running" CI's that are not already in-use
-                // 2.	Sort list by name (alpha, ascending) and store as L
+                // 1.	Read currently "running" CI's that are not already in-use, and sort list by name (alpha, ascending)
                 this.logger.Write("Reading free members ID's from pool...");
                 const runningIDs = await this.poolStateStore.GetFreeMemberIDs();
                 runningIDs.sort();
@@ -153,27 +152,9 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 }
 
                 // 6.	If N = 0:
-                //    a.	Create new instance
-                //    b.	Store name as in-use list
-                //    c.	Wait for startup acknowledgment and return info to caller.
-                // OR.....
-                //    a.    Throw exception and tell clients to try again later, but start a background deployment
+                //    a.    Throw exception and tell clients to try again later
                 if (n === 0){
                     this.logger.Write("No available instances found - creating new deployment...");
-                    //let newInstance = await this.containerService.CreateNewDeploymentSync(numCpu, memoryInGB, tag);
-                    //await this.poolStateStore.UpdateMember(newInstance.id!, true);
-                    //resolve(newInstance);
-
-                    // Fire background task to create a replacement - Cleanup tasks will normalize over-provisioning.
-                    (async () => {
-                        try {
-                            this.logger.Write("Initiating background instance creation.");
-                            let newInstance = await this.containerService.CreateNewDeployment(numCpu, memoryInGB, tag);
-                            await this.poolStateStore.UpdateMember(newInstance.id!, false);
-                        } catch (err) {
-                            this.logger.Write(`**********ERROR during background task**********:\n${JSON.stringify(err)}`);
-                        }
-                    })();
 
                     // Make sure to reject
                     throw "No available computer instances; please try again later.";
