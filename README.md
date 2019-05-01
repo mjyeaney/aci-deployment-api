@@ -9,9 +9,9 @@ The target use case for this sample application is client applications (i.e., mo
 ### Additional Topics
 
 * [Architecture Overview](docs/ArchitectureOverview.md)
-* [Reporting Overview](docs/ReportingOverview.md)
-* [Container Group Reuse](docs/ContainerGroupReuse.md)
+* [Container Group Pooling](docs/ContainerGroupReuse.md)
 * [Container Group Naming](docs/ContainerGroupNaming.md)
+* [Reporting Overview](docs/ReportingOverview.md)
 
 ### Authentication / Authorization
 
@@ -35,6 +35,12 @@ The following API methods are exposed from this application:
     * This removes (deletes) the specified deployment. Note this does *NOT* stop the instance; rather the entire container group resource is deleted.
 * `POST /api/deployments/{deployment-name}/stop`
     * This stops (but does not delete) the specified deployment. Note stopped deployments may be re-used later (see [Container Group Reuse](docs/ContainerGroupReuse.md))
+* `POST /api/deployments/{deployment-name}/release`
+    * This releases the specified instance back into the pool for re-use. Note this may not be applicable to all containers (as the container itself needs to support re-use).
+* `GET /api/configuration`
+    * Returns the current application configuration
+* `GET /api/overviewSummary`
+    * Returns a JSON document that describes the current summary metrics of the ACI Managment platform. These properties are defined in `OverviewDetails`, contained in [src/commonTypes.ts](src/commonTypes.ts).
 
 ### Building
 
@@ -59,6 +65,10 @@ CONTAINER_IMAGE=
 CONTAINER_PORT=
 CONTAINER_OS_TYPE=
 REPORTING_REFRESH_INTERVAL=
+POOL_MINIMUM_SIZE=
+POOL_CPU_COUNT=
+POOL_MEM_GB=
+POOL_CONTAINER_IMAGE_TAG=
 ```
 
 If you're using a custom Docker registry and/or require credentials, set the following variables:

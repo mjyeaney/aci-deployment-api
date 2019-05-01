@@ -4,7 +4,7 @@
 
 import * as $ from "jquery";
 import { IChart, LineChart } from "./charting";
-import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo } from "../commonTypes";
+import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo, ConfigurationWithStatus } from "../commonTypes";
 import { DeploymentsGrid } from "./deploymentsGrid";
 
 export interface IUiBinding
@@ -59,7 +59,7 @@ export class UiBinding implements IUiBinding
         $("#overviewContent").show();
     }
 
-    public ShowConfigurationData(data: ConfigurationDetails) {
+    public ShowConfigurationData(data: ConfigurationWithStatus) {
         $("#config_tenant_id span").text(data.TenantId!);
         $("#config_subscription_id span").text(data.SubscriptionId!);
         $("#config_region span").text(data.Region!);
@@ -69,6 +69,7 @@ export class UiBinding implements IUiBinding
         $("#config_container_port span").text(data.ContainerPort!);
         $("#config_container_os span").text(data.ContainerOs!);
         $("#config_report_interval span").text(data.ReportingRefreshInterval!);
+        $("#config_current_status span").text(data.CurrentStatus!);
     }
 
     public ShowSummaryViewData(data: OverviewDetails){

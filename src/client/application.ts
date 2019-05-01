@@ -39,7 +39,6 @@ class Application implements IApplication {
         console.log(`Item selected: ${path}`);
         switch (path){
             case "/overview":
-                this.loadConfigView();
                 this.loadSummaryView();
                 break;
             case "/deployments":
@@ -56,11 +55,6 @@ class Application implements IApplication {
         this.ui.ShowUserInfo(authInfo);
     }
 
-    private async loadConfigView(){
-        const config = await this.api.LoadConfigurationData();
-        this.ui.ShowConfigurationData(config);
-    }
-
     private async loadSummaryView(){
         this.clearRefreshTimers();
         this.ui.ShowOverviewContent();
@@ -68,11 +62,19 @@ class Application implements IApplication {
         const data = await this.api.LoadSummaryData();
         this.ui.ShowSummaryViewData(data);
 
+        const config = await this.api.LoadConfigurationData();
+        this.ui.ShowConfigurationData(config);
+
         console.log("Setting up overview timer...");
         this.overviewTimer = setInterval(async () => {
             console.log("Overview timer fired!!!");
+            
             const data = await this.api.LoadSummaryData();
             this.ui.ShowSummaryViewData(data);
+
+            const config = await this.api.LoadConfigurationData();
+            this.ui.ShowConfigurationData(config);
+
         }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
     }
 
@@ -86,8 +88,10 @@ class Application implements IApplication {
         console.log("Setting up grid timer...");
         this.instanceGridTimer = setInterval(async () => {
             console.log("Grid timer fired!!!!");
+
             const data = await this.api.LoadInstancesData();
             this.ui.ShowInstanceDetailData(data);
+            
         }, 1000 * this.REFRESH_TIMER_INTERVAL_SEC);
     }
 

@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import { ILogger, IContainerService, IReportingService, ITaskRunner, IPoolStateStore, IContainerInstancePool, PoolStatus } from "./commonTypes";
+import { ILogger, IContainerService, IReportingService, ITaskRunner, IPoolStateStore, IContainerInstancePool, PoolStatus, ConfigurationWithStatus } from "./commonTypes";
 import { ConsoleLogger } from "./logging";
 import { ConfigurationService, IConfigurationService } from "./configService";
 import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
@@ -65,10 +65,14 @@ app.get("/api/overviewSummary", async (req: express.Request, resp: express.Respo
 app.get("/api/configuration", async (req: express.Request, resp: express.Response) => {
     logger.Write("Executing GET /api/configuration...");
     setNoCache(resp);
+    
     let settings = config.GetConfiguration();
     settings.ClientId = "REDACTED";
     settings.ClientSecret = "REDACTED";
-    resp.json(settings);
+
+    let settingsWithStatus = new ConfigurationWithStatus(settings);
+    settingsWithStatus.CurrentStatus = pool.PoolInitialized ? "Ready" : "Initializing";
+    resp.json(settingsWithStatus);
 });
 
 app.get("/api/authinfo", async (req: express.Request, resp: express.Response) => {

@@ -4,13 +4,13 @@
 // NOTE: The UI manipulatino needs fatored out of here..just copy/pasta'd for now.
 //
 
-import { OverviewDetails, ConfigurationDetails, ContainerGroupGridRow, AuthInfo, PoolStatus } from "../commonTypes";
+import { OverviewDetails, ContainerGroupGridRow, AuthInfo, PoolStatus, ConfigurationWithStatus } from "../commonTypes";
 import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
 
 export interface IServiceApi {
     LoadAuthInfo(): Promise<AuthInfo>;
     LoadSummaryData(): Promise<OverviewDetails>;
-    LoadConfigurationData(): Promise<ConfigurationDetails>;
+    LoadConfigurationData(): Promise<ConfigurationWithStatus>;
     LoadInstancesData(): Promise<ContainerGroupGridRow[]>;
 }
 
@@ -46,7 +46,7 @@ export class ServiceApi implements IServiceApi {
     }
 
     public LoadConfigurationData() {
-        return new Promise<ConfigurationDetails>((resolve, reject) => {
+        return new Promise<ConfigurationWithStatus>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("GET", "/api/configuration");
             xhr.onload = () => {

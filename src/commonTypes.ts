@@ -98,6 +98,31 @@ export class ConfigurationDetails {
     PoolContainerImageTag: string = "";
 }
 
+export class ConfigurationWithStatus extends ConfigurationDetails {
+    CurrentStatus: "Initializing" | "Ready" | "Failed" | undefined;
+
+    constructor(base: ConfigurationDetails) {
+        super();
+        this.TenantId = base.TenantId;
+        this.SubscriptionId = base.SubscriptionId;
+        this.ClientId = base.ClientId;
+        this.ClientSecret = base.ClientSecret;
+        this.Region = base.Region;
+        this.ResourceGroup = base.ResourceGroup;
+        this.ContainerImage = base.ContainerImage;
+        this.ContainerPort = base.ContainerPort;
+        this.ContainerOs = base.ContainerOs;
+        this.ReportingRefreshInterval = base.ReportingRefreshInterval;
+        this.ContainerRegistryHost = base.ContainerRegistryHost;
+        this.ContainerRegistryUsername = base.ContainerRegistryUsername;
+        this.ContainerRegistryPassword = base.ContainerRegistryPassword;
+        this.PoolMinimumSize = base.PoolMinimumSize;
+        this.PoolCpuCount = base.PoolCpuCount;
+        this.PoolMemoryInGB = base.PoolMemoryInGB;
+        this.PoolContainerImageTag = base.PoolContainerImageTag;
+    }
+}
+
 export class ContainerGroupGridRow {
     Name?: string;
     Image?: string;
