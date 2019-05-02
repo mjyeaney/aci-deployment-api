@@ -2,10 +2,10 @@
 
 Reporting features within the application are fairly limited, but still offer a high-level view of the underlying activity. The following metrics are available via the web portal:
 
-* Number of running Container Groups
-* Number of stopped Container Groups
-* Time-series view over the last 2 hours.
-* List of all Container Groups (running or stopped)
+* Number of in-use Container Group deployments
+* Number of free/available Container Group deployments
+* Time-series view over the last hour.
+* List of all Container Groups (running or stopped), along with status (in-use, free, or unknown).
 
 Each deployed node triggers a backround routine every one (1) mintue that gathers total counts for both running stopped container groups. Note that this interval is configurable via the `REPORTING_REFRESH_INTERVAL` environment variable, but currently defaults to `PT1M`.
 

@@ -17,10 +17,10 @@ These parameters impact the pool behavior as follows:
 
 When a client requests an ACI compute resource, the following decision tree is followed (where `N` represents the current number of free/available instances):
 
-* If the requested CPU, memory, and Docker image tag all match the current pool configuration (governed by `POOL_CPU_COUNT`, `POOL_MEM_GB`, and `POOL_CONTAINER_IMAGE_TAG`), proceed. Otherwise, begine a synchronous / blocking deployment (client will have to wait until deployment is finished).
+* If the requested CPU, memory, and Docker image tag all match the current pool configuration (governed by `POOL_CPU_COUNT`, `POOL_MEM_GB`, and `POOL_CONTAINER_IMAGE_TAG`), proceed. Otherwise, begin a synchronous / blocking deployment (client will have to wait until deployment is finished).
 * If `N > POOL_MINIMUM_SIZE`, the first instance (sorted lexicographicly) is returned to the client and marked as "in use".
 * If `N < POOL_MINIMUM_SIZE` _and_ `N > 0`, the first instance (sorted lexicographicly) is returned to the client and marked as "in use". Additionally, a background task is started to replace this in-use instance in order to re-populate the pool.
-* If `N = 0`, an error is returned to the client that there are currently no available instances. Clients may try again later to see if the pool refreshing has completed.
+* If `N = 0`, begin a synchronous / blocking deployment (client will have to wait until deployment is finished).
 
 ### Pool Initialization
 
@@ -42,7 +42,6 @@ In order to maintain acceptable numbers of pooled deployments, there are is a sc
 1. Read all currently running instances, and get their full status.
 2. If there are any ACI instances that are stopped / terminated:
     * Delete these instances
-    * If the number of free instances is less than the configured value (`POOL_MINIMUM_SIZE`), create a new deployment to replace this deleted member.
 
 Another job that runs is responsible for maintaining acceptable levels of pool resources so as to not incur cost impacts from running un-utilized compute. This job workflow is as follows:
 
