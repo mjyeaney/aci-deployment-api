@@ -94,6 +94,9 @@ class MockContainerService implements IContainerService {
             resolve(new EmptyContainerGroup());
         });
     }
+    BeginCreateNewDeployment(numCpu: number, memoryInGB: number, imageTag: string | undefined): Promise<ContainerGroup>{
+        throw new Error("method not implemented");
+    }
     StopDeployment(containerGroupName: string): Promise<void>{
         throw new Error("method not implemented");
     }

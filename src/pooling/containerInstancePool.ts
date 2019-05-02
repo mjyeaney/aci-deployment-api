@@ -2,7 +2,7 @@
 // Provides operations over a pool of resources
 //
 import { IContainerService, ILogger, IContainerInstancePool, IPoolStateStore } from "../commonTypes";
-import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { ContainerGroup, ContainerGroupListResult } from "azure-arm-containerinstance/lib/models";
 import { IConfigurationService } from "../configService";
 import * as lockfile from "proper-lockfile";
 
@@ -41,13 +41,12 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 // 1.   Load saved config of pool
                 this.logger.Write("Reading pool member state...");
                 const freeMembers = await this.poolStateStore.GetFreeMemberIDs();
+                const inUseMembers = await this.poolStateStore.GetInUseMemberIDs();
 
-                // 2.   Read current phsical deployments
+                // 2.   Read current phsical deployments and validate pool state
                 this.logger.Write("Reading deployments...");
                 const deployments = await this.containerService.GetDeployments();
-
-                // TODO: Normalize cluster state based on physical deployments
-                // (i.e., remove any cluster state members that are NOT in the physical list).
+                await this.validatePoolState(freeMembers, inUseMembers, deployments);
 
                 // 3. If (n < POOL_MINIMUM_SIZE), create new instances up to that size
                 this.logger.Write(`Found ${freeMembers.length} free members..`);
@@ -94,25 +93,32 @@ export class ContainerInstancePool implements IContainerInstancePool {
     // Get Pooled ContainerGgroup
     public GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup> {
         return new Promise<ContainerGroup>(async (resolve, reject) => {
+            let createSyncDeployment: boolean = false;
             let lockAcquired: boolean = false;
+
+            // Read base configuration
+            this.logger.Write("Reading base configuration...");
+            const config = this.configService.GetConfiguration();
+
             try {
-                // TODO: Verify that cpu/memory/image match pool settings
+                // Verify that cpu/memory/image match pool settings
+                if ((numCpu != config.PoolCpuCount) || (memoryInGB != config.PoolMemoryInGB) || (tag != config.PoolContainerImageTag)){
+                    this.logger.Write("WARNING: provided parameters do not match pool definition");
+                    resolve(await this.containerService.BeginCreateNewDeployment(numCpu, memoryInGB, tag));
+                    return;
+                }
 
                 // Acquire singleton mutex
                 await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
                 lockAcquired = true;
                 this.logger.Write(`Entered critical section for ::GetPooledContainerInstance`);
 
-                // 0.   Read base configuration
-                this.logger.Write("Reading base configuration...");
-                const config = this.configService.GetConfiguration();
-
-                // 1.	Read currently "running" CI's that are not already in-use, and sort list by name (alpha, ascending)
+                // Read currently "running" CI's that are not already in-use, and sort list by name (alpha, ascending)
                 this.logger.Write("Reading free members ID's from pool...");
                 const runningIDs = await this.poolStateStore.GetFreeMemberIDs();
                 runningIDs.sort();
                 
-                // 3.	Store count as N
+                // Grab count of free members
                 const n = runningIDs.length;
                 this.logger.Write(`Found ${n} free members`);
 
@@ -124,7 +130,6 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     await this.poolStateStore.UpdateMember(candidateId, true);
                     let deploymentName = candidateId.substr(candidateId.lastIndexOf('/') + 1);
                     let containerGroup = await this.containerService.GetDeployment(deploymentName);
-
                     resolve(containerGroup);
                 }
 
@@ -155,12 +160,12 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 }
 
                 // 6.	If N = 0:
-                //    a.    Throw exception and tell clients to try again later
+                //    a.    Clients must wait for a deployment to begin
                 if (n === 0){
                     this.logger.Write("No available instances found - creating new deployment...");
-
-                    // Make sure to reject
-                    throw "No available computer instances; please try again later.";
+                    let asyncDeployment = await this.containerService.BeginCreateNewDeployment(numCpu, memoryInGB, tag);
+                    await this.poolStateStore.UpdateMember(asyncDeployment.id!, true);
+                    resolve(asyncDeployment);
                 }
             } catch (err) {
                 reject(err);
@@ -176,6 +181,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
     public RemovePooledContainerInstance(deploymentId: string): Promise<void>{
         return new Promise<void>(async (resolve, reject) => {
             try {
+                this.logger.Write(`Removing pooled container instance ${deploymentId}`);
                 let deployment = await this.containerService.GetDeployment(deploymentId);
                 await this.poolStateStore.RemoveMember(deployment.id!);
                 await this.containerService.DeleteDeployment(deployment.name!);
@@ -189,6 +195,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
     public ReleasePooledConatainerInstance(deploymentId: string): Promise<void> {
         return new Promise<void>(async (resolve, reject) => {
             try {
+                this.logger.Write(`Releaseing pooled container instance ${deploymentId}`);
                 let deployment = await this.containerService.GetDeployment(deploymentId);
                 await this.poolStateStore.UpdateMember(deployment.id!, false);
                 resolve();
@@ -196,5 +203,28 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 reject(err);
             }
         })
+    }
+
+    private async validatePoolState(freeMembers: Array<string>, inUseMembers: Array<string>, deployments: ContainerGroupListResult): Promise<void> {
+        const free = new Set(freeMembers);
+        const inUse = new Set(inUseMembers);
+        const deployed = new Set();
+        const all = new Set([...free, ...inUse]);
+
+        // Check for unknown deployments
+        for (let d of deployments){
+            if (!all.has(d.id!)){
+                this.logger.Write(`WARNING: Member ${d.name} is not found in current pool state;`)
+            }
+            deployed.add(d.id!);
+        }
+
+        // Check for pool members which are missing deployments
+        for (let a of all){
+            if (!deployed.has(a)){
+                this.logger.Write(`WARNING: Member ${a} has no matching deployment...removing pool member`);
+                await this.poolStateStore.RemoveMember(a);
+            }
+        }
     }
 }

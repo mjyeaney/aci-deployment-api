@@ -83,15 +83,21 @@ export class ServiceApi implements IServiceApi {
                         row.MemoryInGB = item.containers![0].resources!.requests!.memoryInGB;
                         row.IpAddress = item.ipAddress!.ip!;
                         row.OsType = item.osType!;
-                        row.Status = "Unknown";
 
-                        // Leverage tags for pool status
-                        if (freeList.has(item.id!)){
+                        // Update status fields
+                        if ((!freeList.has(item.id!)) && (!inUseList.has(item.id!))){
+                            row.Unknown = true;
                             row.InUse = false;
-                        }
+                        } else {
+                            if (freeList.has(item.id!)){
+                                row.InUse = false;
+                                row.Unknown = false;
+                            }
 
-                        if (inUseList.has(item.id!)){
-                            row.InUse = true;
+                            if (inUseList.has(item.id!)){
+                                row.InUse = true;
+                                row.Unknown = false;
+                            }
                         }
 
                         data.push(row);

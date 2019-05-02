@@ -28,6 +28,7 @@ export interface IContainerService {
     GetDeployments(): Promise<ContainerGroupListResult>;
     GetDeployment(containerGroupName: string): Promise<ContainerGroup>;
     CreateNewDeployment(numCpu: number, memoryInGB: number, imageTag: string | undefined): Promise<ContainerGroup>;
+    BeginCreateNewDeployment(numCpu: number, memoryInGB: number, imageTag: string | undefined): Promise<ContainerGroup>;
     StopDeployment(containerGroupName: string): Promise<void>;
     DeleteDeployment(containerGroupName: string): Promise<void>;
     GetFullConatinerDetails(): Promise<ContainerGroup[]>;
@@ -128,12 +129,12 @@ export class ConfigurationWithStatus extends ConfigurationDetails {
 export class ContainerGroupGridRow {
     Name?: string;
     Image?: string;
-    Status?: string;
     CpuCount: number = 0;
     MemoryInGB: number = 0;
     IpAddress?: string;
     OsType?: string;
     InUse?: boolean;
+    Unknown?: boolean;
 }
 
 export class PoolStatus {

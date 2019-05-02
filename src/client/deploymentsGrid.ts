@@ -32,7 +32,7 @@ export class DeploymentsGrid {
         const markup = data.map((item: ContainerGroupGridRow) => {
             return `
             <tr>
-                <td class="centered">${this.getInUseMarkup(item.InUse)}</td>
+                <td class="centered">${this.getInUseMarkup(item.InUse, item.Unknown)}</td>
                 <td>${item.Name}</td>
                 <td>${item.IpAddress ? item.IpAddress : "Unassigned"}</td>
                 <td>${item.Image}</td>
@@ -44,11 +44,15 @@ export class DeploymentsGrid {
         return markup.join('');
     }
 
-    private getInUseMarkup(inUse: boolean | undefined): string {
-        if (inUse) {
-            return "<i class=\"fas fa-check\"></i>";
+    private getInUseMarkup(inUse: boolean | undefined, unknown: boolean | undefined): string {
+        if (unknown) {
+            return "<i class=\"fas fa-exclamation-triangle\" title=\"Status unknown\"></i>";
         } else {
-            return "";
+            if (inUse) {
+                return "<i class=\"fas fa-check\" title=\"Deployment in-use\"></i>";
+            } else {
+                return "";
+            }
         }
     }
 }

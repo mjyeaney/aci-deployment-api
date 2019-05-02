@@ -1,7 +1,5 @@
 //
-// Implements background cleanup tasks within the applicaiton. This includes (but is not limited to)
-// removal of un-used container groups that have not been started within configured intervals, cleanup 
-// of any orphaned "pending" deployments, etc.
+// This background job is responsible for removing stopped/terminated deployments.
 //
 
 import { ILogger, ContainerGroupStatus, ITask, TaskScheduleInfo, IContainerInstancePool, IContainerService } from "../commonTypes";
@@ -12,7 +10,7 @@ export class PurgeStoppedDeployments implements ITask {
     private readonly aci: IContainerService;
     private readonly logger: ILogger;
 
-    public Name: string = "PurgeUnusedDeployments";
+    public Name: string = "PurgeStoppedDeployments";
     
     constructor(logger: ILogger, pool: IContainerInstancePool, aci: IContainerService){
         this.logger = logger;
@@ -21,7 +19,7 @@ export class PurgeStoppedDeployments implements ITask {
     }
 
     public GetScheduleInfo(): TaskScheduleInfo {
-        this.logger.Write("Retreiving task schedule infomation for [PurgeUnusedDeployments]...");
+        this.logger.Write("Retreiving task schedule infomation for [PurgeStoppedDeployments]...");
         const config = new TaskScheduleInfo();
         config.Enabled = true;
         config.Interval = "PT5M";

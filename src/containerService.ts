@@ -121,6 +121,31 @@ export class ContainerService implements IContainerService {
         });
     }
 
+    public async BeginCreateNewDeployment(numCpu: number, memoryInGB: number, imageTag: string | undefined) {
+        return new Promise<ContainerGroup>(async (resolve, reject) => {
+            const start = Date.now();
+            
+            try {
+                await this.initializeAciClient();
+
+                let deploymentName = `aci-inst-${uuid().substr(-12)}`;
+                let groupDescription = this.getContainerGroupDescription(memoryInGB, numCpu, deploymentName, imageTag);
+                let containerGroup = await this.aciClient!.containerGroups.beginCreateOrUpdate(this.settings.ResourceGroup,
+                    deploymentName, 
+                    groupDescription);                    
+                
+                resolve(containerGroup);
+            } catch (err) {
+                this.logger.Write("*****Error in ::CreateNewDeployment*****");
+                this.logger.Write(JSON.stringify(err));
+                reject(err);
+            }
+
+            const duration = Date.now() - start;
+            this.logger.Write(`::CreateNewDeployment duration ${duration} ms`);
+        });
+    }
+
     public async GetFullConatinerDetails(): Promise<ContainerGroup[]> {
         // list all existing groups
         this.logger.Write("Listing group deployments...");

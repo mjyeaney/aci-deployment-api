@@ -4,7 +4,7 @@
 // of any orphaned "pending" deployments, etc.
 //
 
-import { ILogger, IContainerService, ITaskRunner, ITask, IPoolStateStore, IContainerInstancePool } from "../commonTypes";
+import { ILogger, IContainerService, ITaskRunner, ITask, IContainerInstancePool } from "../commonTypes";
 import { PurgeStoppedDeployments } from "./purgeStoppedDeployments";
 import * as moment from "moment";
 
@@ -19,6 +19,7 @@ export class DefaultTaskRunner implements ITaskRunner {
         // and filter by those which are enabled / etc.
         this.logger.Write("Adding tasks to DefaultTaskRunner");
         this.tasks.push(new PurgeStoppedDeployments(logger, pool, aci));
+        //this.tasks.push(new PurgeExcessDeployments(logger, pool, aci));
     }
 
     public ScheduleAll(): void {

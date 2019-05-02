@@ -134,9 +134,9 @@ app.post("/api/deployments", async (req: express.Request, resp: express.Response
             resp.status(400).end();
         } else {
             // Note that 'tag' is optional
-            let tag = req.body.tag;
-            let numCpu = req.body.numCpu;
-            let memory = req.body.memoryInGB;
+            let tag: string = req.body.tag ? req.body.tag : "";
+            let numCpu: number = parseInt(req.body.numCpu);
+            let memory: number = parseFloat(req.body.memoryInGB);
 
             pool.GetPooledContainerInstance(numCpu, memory, tag).then((data: ContainerGroup) => {
                 resp.json(data);
