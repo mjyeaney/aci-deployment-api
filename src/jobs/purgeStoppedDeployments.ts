@@ -52,9 +52,9 @@ export class PurgeStoppedDeployments implements ITask {
             this.logger.Write(`Removing ${d.name}..`);
 
             // Until we implement singleton locking, mutliple nodes may be running this 
-            // code, causing a 404 on certain delete calls. 
+            // code, causing a 404/not found on certain delete calls. Only an issue as jobs scale out
             try {
-                await this.poolService.RemovePooledContainerInstance(d.id!);
+                await this.poolService.RemovePooledContainerInstance(d.name!);
             }
             catch (err){
                 this.logger.Write(`[ERROR] - ${JSON.stringify(err)}`);

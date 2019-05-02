@@ -15,6 +15,7 @@ export interface IContainerInstancePool {
     GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup>;
     RemovePooledContainerInstance(deploymentId: string): Promise<void>;
     ReleasePooledConatainerInstance(deploymentId: string): Promise<void>;
+    RemoveExcessFreeMembers(): Promise<void>;
 }
 
 export interface IPoolStateStore {

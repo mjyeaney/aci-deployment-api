@@ -93,7 +93,6 @@ export class ContainerInstancePool implements IContainerInstancePool {
     // Get Pooled ContainerGgroup
     public GetPooledContainerInstance(numCpu: number, memoryInGB: number, tag: string): Promise<ContainerGroup> {
         return new Promise<ContainerGroup>(async (resolve, reject) => {
-            let createSyncDeployment: boolean = false;
             let lockAcquired: boolean = false;
 
             // Read base configuration
@@ -203,6 +202,57 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 reject(err);
             }
         })
+    }
+
+    public RemoveExcessFreeMembers(): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            let lockAcquired: boolean = false;
+
+            // Read base configuration
+            this.logger.Write("Reading base configuration...");
+            const config = this.configService.GetConfiguration();
+
+            try {
+                // Acquire singleton mutex
+                await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
+                lockAcquired = true;
+                this.logger.Write(`Entered critical section for ::RemoveExcessFreeMembers`);
+
+                // Read currently "running" CI's that are not already in-use, and sort list by name (alpha, ascending)
+                this.logger.Write("Reading free members ID's from pool...");
+                const runningIDs = await this.poolStateStore.GetFreeMemberIDs();
+                runningIDs.sort();
+                
+                // Grab count of free members
+                const n = runningIDs.length;
+                this.logger.Write(`Found ${n} free members`);
+
+                // If there are more free members than should be running, remove them
+                if (n > config.PoolMinimumSize){
+                    let membersToRemove = (n - config.PoolMinimumSize);
+                    this.logger.Write(`Found excess free members...removing ${membersToRemove} members`);
+
+                    for (let j = 0; j < membersToRemove; j++){
+                        let candidateId = runningIDs[j];
+                        let candidateName = candidateId.substr(candidateId.lastIndexOf('/') + 1);
+
+                        this.logger.Write(`Removing excess member ${candidateName}`);
+                        await this.poolStateStore.RemoveMember(candidateId);
+                        await this.containerService.DeleteDeployment(candidateName);
+                    }
+                }
+
+                // Done!
+                resolve();
+            } catch (err) {
+                reject(err);
+            } finally {
+                if (lockAcquired){
+                    await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
+                    this.logger.Write(`Critical section finished for ::RemoveExcessFreeMembers()`);
+                }
+            }
+        });
     }
 
     private async validatePoolState(freeMembers: Array<string>, inUseMembers: Array<string>, deployments: ContainerGroupListResult): Promise<void> {
