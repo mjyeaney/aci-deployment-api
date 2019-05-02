@@ -162,9 +162,11 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 //    a.    Clients must wait for a deployment to begin
                 if (n === 0){
                     this.logger.Write("No available instances found - creating new deployment...");
-                    let asyncDeployment = await this.containerService.BeginCreateNewDeployment(numCpu, memoryInGB, tag);
-                    await this.poolStateStore.UpdateMember(asyncDeployment.id!, true);
-                    resolve(asyncDeployment);
+                    (async () => {
+                        let asyncDeployment = await this.containerService.BeginCreateNewDeployment(numCpu, memoryInGB, tag);
+                        await this.poolStateStore.UpdateMember(asyncDeployment.id!, true);
+                        resolve(asyncDeployment);
+                    })();
                 }
             } catch (err) {
                 reject(err);

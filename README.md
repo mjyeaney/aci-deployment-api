@@ -91,4 +91,6 @@ Note however, that the deployment will necessarily need to be more complicated, 
 
 The dashboarding experience is rather limited right now, but the intention is to give a better overview on the history of utilization. Note that the reporting data is ephemeral and held only in-memory on the nodes. This needs moved into a persistent storage location.
 
-![Screenshot](docs/basic-screenshot.png)
+![Screenshot 3](docs/screenshot-3.png)
+![Screenshot 2](docs/screenshot-2.png)
+![Screenshot 1](docs/screenshot-1.png)
