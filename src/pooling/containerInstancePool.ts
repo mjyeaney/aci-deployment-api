@@ -30,7 +30,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
             let lockAcquired: boolean = false;
             try {
                 // This only should run on a single instance
-                await lockfile.lock(this.INIT_ROOT_FILE_PATH, { retries: 5 });
+                await lockfile.lock(this.INIT_ROOT_FILE_PATH, { retries: 6 });
                 lockAcquired = true;
                 this.logger.Write(`Entered critical section for ::Initialize()`);
 
@@ -109,7 +109,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 }
 
                 // Acquire singleton mutex
-                await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
+                await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 6});
                 lockAcquired = true;
                 this.logger.Write(`Entered critical section for ::GetPooledContainerInstance`);
 
@@ -220,7 +220,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
 
             try {
                 // Acquire singleton mutex
-                await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5});
+                await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 6});
                 lockAcquired = true;
                 this.logger.Write(`Entered critical section for ::RemoveExcessFreeMembers`);
 

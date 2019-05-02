@@ -116,7 +116,7 @@ export class PoolStateStore implements IPoolStateStore {
     }
 
     public async LockStore(): Promise<() => Promise<void>> {
-        return lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 5 })
+        return lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 6 })
     }
 
     public async UnlockStore(): Promise<void> {
