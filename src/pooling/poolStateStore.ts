@@ -22,24 +22,40 @@ export class PoolStateStore implements IPoolStateStore {
 
     public GetFreeMemberIDs(): Promise<string[]> {
         return new Promise<string[]>(async (resolve, reject) => {
+            let acquiredLock: boolean = false;
             try {
+                await this.LockStore();
+                acquiredLock = true;
+
                 this.readSync();
                 let deploymentNames = [...this.free]
                 resolve(deploymentNames);
             } catch (err) {
                 reject(err);
+            } finally {
+                if (acquiredLock){
+                    await this.UnlockStore();
+                }
             }
         });
     }
 
     public GetInUseMemberIDs(): Promise<Array<string>>{
         return new Promise<string[]>(async (resolve, reject) => {
+            let acquiredLock: boolean = false;
             try {
+                await this.LockStore();
+                acquiredLock = true;
+                
                 this.readSync();
                 let deploymentNames = [...this.inUse];
                 resolve(deploymentNames);
             } catch (err) {
                 reject(err);
+            } finally {
+                if (acquiredLock){
+                    await this.UnlockStore();
+                }
             }
         });
     }

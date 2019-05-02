@@ -78,6 +78,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 // Done
                 resolve();
             } catch (err) {
+                this.logger.Write(`ERROR in ::Initialize(): ${JSON.stringify(err)}`);
                 reject(err);
             }
             finally {
@@ -169,6 +170,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     })();
                 }
             } catch (err) {
+                this.logger.Write(`ERROR in ::GetPooledContainerInstance(): ${JSON.stringify(err)}`);
                 reject(err);
             } finally {
                 if (lockAcquired){
@@ -188,6 +190,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 await this.containerService.DeleteDeployment(deployment.name!);
                 resolve();
             } catch (err) {
+                this.logger.Write(`ERROR in ::RemovePooledContainerInstance(): ${JSON.stringify(err)}`);
                 reject(err);
             }
         });
@@ -201,6 +204,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 await this.poolStateStore.UpdateMember(deployment.id!, false);
                 resolve();
             } catch (err) {
+                this.logger.Write(`ERROR in ::ReleasePooledConatainerInstance(): ${JSON.stringify(err)}`);
                 reject(err);
             }
         })
@@ -247,6 +251,7 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 // Done!
                 resolve();
             } catch (err) {
+                this.logger.Write(`ERROR in ::RemoveExcessFreeMembers(): ${JSON.stringify(err)}`);
                 reject(err);
             } finally {
                 if (lockAcquired){
