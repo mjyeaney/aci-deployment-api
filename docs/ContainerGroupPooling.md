@@ -43,7 +43,12 @@ In order to maintain acceptable numbers of pooled deployments, there are is a sc
 2. If there are any ACI instances that are stopped / terminated:
     * Delete these instances
 
-Another job that runs is responsible for maintaining acceptable levels of pool resources so as to not incur cost impacts from running un-utilized compute. This job workflow is as follows:
+A second job that runs is responsible for maintaining acceptable levels of pool resources so as to not incur cost impacts from running un-utilized compute. This job workflow is as follows:
 
 1. Read all currently free instances.
 2. If there are more free instances than currently configured pool size (`POOL_MINIMUM_SIZE`), remove excess deployments.
+
+Finally, there is a job that is responsible for maintaining the _minimum_ count of pool members in the event that the platform falls below. This job workflow is as follows:
+
+1. Read all currently free instances.
+2. If there are less free instances than are currently configured (`POOL_MINIMUM_SIZE`), create additional members to repopulate the pool.
