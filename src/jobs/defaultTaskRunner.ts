@@ -8,6 +8,7 @@ import * as moment from "moment";
 import { ILogger, IContainerService, ITaskRunner, ITask, IContainerInstancePool } from "../commonTypes";
 import { PurgeStoppedDeployments } from "./purgeStoppedDeployments";
 import { PurgeExcessDeployments } from "./purgeExcessDeployments";
+import { RestorePoolDeployments } from "./restorePoolDeployments";
 
 export class DefaultTaskRunner implements ITaskRunner {
     private readonly logger: ILogger;
@@ -21,6 +22,7 @@ export class DefaultTaskRunner implements ITaskRunner {
         this.logger.Write("Adding tasks to DefaultTaskRunner");
         this.tasks.push(new PurgeStoppedDeployments(logger, pool, aci));
         this.tasks.push(new PurgeExcessDeployments(logger, pool));
+        this.tasks.push(new RestorePoolDeployments(logger, pool));
     }
 
     public ScheduleAll(): void {

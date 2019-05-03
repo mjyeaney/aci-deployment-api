@@ -9,6 +9,7 @@ echo -n "Creating instances in parallel..."
 for i in $(seq 1 10);
 do
     curl -X POST -H 'Content-Type: application/json' --data '{"numCpu":2,"memoryInGB":2}' $ACI_API_HOST &
+    sleep .1
 done;
 
 echo "Done! Waiting for processes to complete..."

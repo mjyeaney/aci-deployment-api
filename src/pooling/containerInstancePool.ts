@@ -238,14 +238,17 @@ export class ContainerInstancePool implements IContainerInstancePool {
                     let membersToRemove = (n - config.PoolMinimumSize);
                     this.logger.Write(`Found excess free members...removing ${membersToRemove} members`);
 
-                    for (let j = 0; j < membersToRemove; j++){
-                        let candidateId = runningIDs[j];
-                        let candidateName = candidateId.substr(candidateId.lastIndexOf('/') + 1);
+                    // This work can now be done outside the critical section
+                    (async () => {
+                        for (let j = 0; j < membersToRemove; j++){
+                            let candidateId = runningIDs[j];
+                            let candidateName = candidateId.substr(candidateId.lastIndexOf('/') + 1);
 
-                        this.logger.Write(`Removing excess member ${candidateName}`);
-                        await this.poolStateStore.RemoveMember(candidateId);
-                        await this.containerService.DeleteDeployment(candidateName);
-                    }
+                            this.logger.Write(`Removing excess member ${candidateName}`);
+                            await this.poolStateStore.RemoveMember(candidateId);
+                            await this.containerService.DeleteDeployment(candidateName);
+                        }
+                    })();
                 }
 
                 // Done!
@@ -257,6 +260,59 @@ export class ContainerInstancePool implements IContainerInstancePool {
                 if (lockAcquired){
                     await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
                     this.logger.Write(`Critical section finished for ::RemoveExcessFreeMembers()`);
+                }
+            }
+        });
+    }
+
+    public EnsureMinFreeMembers(): Promise<void> {
+        return new Promise<void>(async (resolve, reject) => {
+            let lockAcquired: boolean = false;
+
+            // Read base configuration
+            this.logger.Write("Reading base configuration...");
+            const config = this.configService.GetConfiguration();
+
+            try {
+                // Acquire singleton mutex
+                await lockfile.lock(this.SYNC_ROOT_FILE_PATH, { retries: 6});
+                lockAcquired = true;
+                this.logger.Write(`Entered critical section for ::EnsureMinFreeMembers`);
+
+                // Read currently "running" CI's that are not already in-use, and sort list by name (alpha, ascending)
+                this.logger.Write("Reading free members ID's from pool...");
+                const runningIDs = await this.poolStateStore.GetFreeMemberIDs();
+                runningIDs.sort();
+                
+                // Grab count of free members
+                const n = runningIDs.length;
+                this.logger.Write(`Found ${n} free members`);
+
+                // If there are more free members than should be running, remove them
+                if (n < config.PoolMinimumSize){
+                    let membersToCreate = (config.PoolMinimumSize - n);
+                    this.logger.Write(`Creating ${membersToCreate} new members..`);
+
+                    // This work can now be done outside the critical section
+                    for (let j = 0; j < membersToCreate; j++){
+                        (async () => {
+                            let newInstance = await this.containerService.CreateNewDeployment(config.PoolCpuCount, 
+                                config.PoolMemoryInGB, 
+                                config.PoolContainerImageTag);
+                            await this.poolStateStore.UpdateMember(newInstance.id!, false);
+                        })();
+                    }
+                }
+
+                // Done!
+                resolve();
+            } catch (err) {
+                this.logger.Write(`ERROR in ::EnsureMinFreeMembers(): ${JSON.stringify(err)}`);
+                reject(err);
+            } finally {
+                if (lockAcquired){
+                    await lockfile.unlock(this.SYNC_ROOT_FILE_PATH);
+                    this.logger.Write(`Critical section finished for ::EnsureMinFreeMembers()`);
                 }
             }
         });
