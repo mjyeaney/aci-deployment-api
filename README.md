@@ -37,6 +37,8 @@ The following API methods are exposed from this application:
     * This stops (but does not delete) the specified deployment.
 * `POST /api/deployments/{deployment-name}/release`
     * This releases the specified instance back into the pool for re-use. Note this may not be applicable to all containers (as the container itself needs to support re-use).
+* `GET /api/poolStatus`
+    * This returns the current pool status catalog, containing collections for both in-use and free members.
 * `GET /api/configuration`
     * Returns the current application configuration
 * `GET /api/overviewSummary`
@@ -81,11 +83,9 @@ CONTAINER_REGISTRY_PASSWORD=
 
 For local development, you may place a `.env` file in your root folder to set these variables.
 
-### Why App Service?
+### Frequently Asked Questions
 
-This specific project was intentionally deployed as a single Web App to help facilitate simple deployments for teams new to Azure. However, it is a logical next step to decompose the appliction into a more microservice-based approach, likely using Functions, API Management, and some coordinating store (such as Redis or CosmosDB). 
-
-Note however, that the deployment will necessarily need to be more complicated, and definitely has more moving parts. This needs careful consideration, as it will have impact on the team(s) that will be deploying, developing, and maintaining the solution.
+See a list of FAQ's [here](docs/faq.md)
 
 ### Future Work
 
