@@ -1,155 +1,88 @@
-// import * as Assert from "assert";
-// import { ContainerInstancePool } from "../../pooling/containerInstancePool";
-// import { IContainerService, ILogger, ConfigurationDetails, IPoolStateStore } from "../../commonTypes";
-// import { IConfigurationService } from "../../configService";
-// import { ContainerGroup, ContainerGroupListResult } from "azure-arm-containerinstance/lib/models";
+import * as Assert from "assert";
+import { ContainerInstancePool } from "../../pooling/containerInstancePool";
+import { IContainerService, ILogger, ConfigurationDetails, IPoolStateStore, TaskScheduleInfo } from "../../commonTypes";
+import { IConfigurationService } from "../../configService";
+import { ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { MockContainerService } from "../mockContainerService";
+import { MockPoolStateStore } from "../mockPoolStateStore";
+import { MockLogger } from "../mockLogger";
 
-// class MockConfig implements IConfigurationService {
-//     GetConfiguration(): ConfigurationDetails {
-//         // Count calls
-//         PARALLEL_CALL_COUNT++;
+class MockConfig implements IConfigurationService {
+    GetConfiguration(): ConfigurationDetails {
+        const config = new ConfigurationDetails();
+        // setup as needed
+        config.PoolMinimumSize = 5;
+        config.PoolMemoryInGB = 2;
+        config.PoolContainerImageTag = "";
+        config.PoolCpuCount = 2;
+        return config;
+    }
+}
 
-//         const config = new ConfigurationDetails();
-//         // setup as needed
-//         config.PoolMinimumSize = POOL_MINIMUM_SIZE;
-//         return config;
-//     }
-// }
+// Create mock instances
+let mockConfig: IConfigurationService = new MockConfig();
+let mockLogger: ILogger = new MockLogger();
+let poolStateStore: IPoolStateStore = new MockPoolStateStore();
+let containerService: IContainerService = new MockContainerService();
 
-// class MockLogger implements ILogger {
-//     Write(message: string): void { console.log(message); }
-// }
+// Create system under test
+const sut = new ContainerInstancePool(poolStateStore, containerService, mockConfig, mockLogger);
 
-// class MockPoolStateStore implements IPoolStateStore {
-//     GetFreeMemberIDs(): Promise<string[]> {
-//         return new Promise<string[]>((resolve) => {
-//             const freeMembers: Array<string> = [];
-//             for (let i = 1; i <= FREE_MEMBER_COUNT; i++){
-//                 freeMembers.push(`${i}/${i}`);
-//             }
-//             resolve(freeMembers);
-//         });
-//     }
-//     GetInUseMemberIDs(): Promise<string[]> {
-//         return new Promise<string[]>((resolve) => {
-//             const freeMembers: Array<string> = [];
-//             for (let i = 1; i <= INUSE_MEMBER_COUNT; i++){
-//                 freeMembers.push(`${i}/${i}`);
-//             }
-//             resolve(freeMembers);
-//         });
-//     }
-//     UpdateMember(memberId: string, inUse: boolean): Promise<void> {
-//         return new Promise<void>((resolve) => {
-//             LAST_TAG_UPDATE_RESOURCE_ID = memberId;
-//             LAST_TAG_UPDATE_VALUE = inUse ? "InUse" : "Free";
-//             resolve();
-//         });
-//     }
-//     RemoveMember(memberId: string): Promise<void> {
-//         throw "Method not implemented";
-//     }
-// }
+// Helper to reset all state
+const resetState = async () => {
+    // List all deployments
+    let deployments = await containerService.GetDeployments();
+    deployments.forEach(async d => {
+        await sut.RemovePooledContainerInstance(d.name!);
+    });
+};
 
-// class EmptyContainerGroup implements ContainerGroup {
-//     identity?: any;
-//     provisioningState?: string;
-//     containers: any;
-//     imageRegistryCredentials?: any;
-//     restartPolicy?: string;
-//     ipAddress?: any;
-//     osType: string = "";
-//     volumes?: any;
-//     instanceView?: any;
-//     diagnostics?: any;
-//     networkProfile?: any;
-//     dnsConfig?: any;
-//     id?: string;
-//     name?: string;
-//     type?: string;
-//     location?: string;
-//     tags?: { [propertyName: string]: string; };
-// }
+describe("ContainerInstancePool", () => {
+    describe("GetPooledContainerInstance", () => {
+        it("Once initialized, should return pooled instances and replace them", async () => {
+            await sut.Initialize();
+            
+            // Dispatch a bunch of parallel work
+            let tasks: Array<Promise<ContainerGroup>> = [];
+            for (let i = 0; i < 3; i++){
+                tasks.push(sut.GetPooledContainerInstance(2, 2, ""));
+            }
 
-// class MockContainerService implements IContainerService {
-//     GetDeployments(): Promise<ContainerGroupListResult> {
-//         throw new Error("method not implemented");
-//     }
-//     GetDeployment(containerGroupName: string): Promise<ContainerGroup>{
-//         return new Promise<ContainerGroup>((resolve) => {
-//             if (PARALLEL_CALL_COUNT === 1) {
-//                 PARALLEL_CALL_COUNT--;
-//             }
-//             let instance = new EmptyContainerGroup();
-//             instance.name = containerGroupName;
-//             instance.id = containerGroupName;
-//             resolve(instance);
-//         });
-//     }
-//     CreateNewDeployment(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>{
-//         return new Promise<ContainerGroup>((resolve) => {
-//             if (PARALLEL_CALL_COUNT === 1) {
-//                 PARALLEL_CALL_COUNT--;
-//             }
-//             resolve(new EmptyContainerGroup());
-//         });
-//     }
-//     BeginCreateNewDeployment(numCpu: number, memoryInGB: number, imageTag: string | undefined): Promise<ContainerGroup>{
-//         throw new Error("method not implemented");
-//     }
-//     StopDeployment(containerGroupName: string): Promise<void>{
-//         throw new Error("method not implemented");
-//     }
-//     DeleteDeployment(containerGroupName: string): Promise<void>{
-//         throw new Error("method not implemented");
-//     }
-//     GetFullConatinerDetails(): Promise<ContainerGroup[]>{
-//         throw new Error("method not implemented");
-//     }
-// }
+            // Wait for work to finish
+            await Promise.all(tasks);
 
-// // Create mock instances
-// let mockConfig: IConfigurationService = new MockConfig();
-// let mockLogger: ILogger = new MockLogger();
-// let mockPoolStateStore: IPoolStateStore = new MockPoolStateStore();
-// let mockContainerService: IContainerService = new MockContainerService();
+            // Should only be 3+5 containers deployed
+            let finalDeployments = await containerService.GetDeployments();
+            Assert.equal(finalDeployments.length, 8);
 
-// // Control params / flags
-// let PARALLEL_CALL_COUNT = 0;
-// let POOL_MINIMUM_SIZE = 2;
-// let FREE_MEMBER_COUNT = 5;
-// let INUSE_MEMBER_COUNT = 3;
-// let LAST_TAG_UPDATE_RESOURCE_ID = "";
-// let LAST_TAG_UPDATE_VALUE = "";
+            // Should be 3 in-use
+            let finalInUse = await poolStateStore.GetInUseMemberIDs();
+            Assert.equal(finalInUse.length, 3);
 
-// // Create system under test
-// const sut = new ContainerInstancePool(mockPoolStateStore, mockContainerService, mockConfig, mockLogger);
+            // Should be 5 free
+            let finalFree = await poolStateStore.GetFreeMemberIDs();
+            Assert.equal(finalFree.length, 5);
 
-// describe("ContainerInstancePool", () => {
-//     describe("GetPooledContainerInstance", () => {
-//         it("Only allows serial execution", async () => {
-//             // Dispatch a bunch of parallel work
-//             let tasks: Array<Promise<ContainerGroup>> = [];
-//             for (let i = 0; i < 3; i++){
-//                 tasks.push(sut.GetPooledContainerInstance(2, 2, ""));
-//             }
+            // Cleanup
+            await resetState();
+        });
 
-//             // Wait for work to finish
-//             await Promise.all(tasks);
+        it("Only allows serial execution", async () => {
+            // Dispatch some parallel work
+            let tasks: Array<Promise<ContainerGroup>> = [];
+            for (let i = 0; i < 5; i++){
+                tasks.push(sut.GetPooledContainerInstance(2, 2, ""));
+            }
 
-//             // Verify that parallel counter was only EVER 1, which means is should be zero
-//             Assert.equal(PARALLEL_CALL_COUNT, 0);
-//         });
+            // Wait for work to finish
+            await Promise.all(tasks);
 
-//         it("If free members >= POOL_MINIMUM_SIZE, return first running instance, and mark as in-use.", async () => {
-//             FREE_MEMBER_COUNT = 5;
-//             POOL_MINIMUM_SIZE = 2;
+            // Should only be 5 since this test had no available
+            let finalDeployments = await containerService.GetDeployments();
+            Assert.equal(finalDeployments.length, 5);
 
-//             let instance = await sut.GetPooledContainerInstance(2, 2, "");
-
-//             Assert.equal(instance.name!, "1");
-//             Assert.equal(LAST_TAG_UPDATE_RESOURCE_ID, "1/1");
-//             Assert.equal(LAST_TAG_UPDATE_VALUE, "InUse");
-//         });
-//     });
-// });
+            // Cleanup
+            await resetState();
+        });
+    });
+});

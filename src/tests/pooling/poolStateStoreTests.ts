@@ -1,93 +1,72 @@
-// import { PoolStateStore, IPoolStateStore } from "../../pooling/poolStateStore";
-// import * as Assert from "assert";
-// import { IContainerService } from "../../commonTypes";
-// import { ContainerGroupListResult, ContainerGroup } from "azure-arm-containerinstance/lib/models";
+import { PoolStateStore } from "../../pooling/poolStateStore";
+import { MockLogger } from "../mockLogger";
+import * as Assert from "assert";
 
-// let LastUpdateDeploymentTagValue: string;
+const logger = new MockLogger();
+const sut = new PoolStateStore(logger);
 
-// class MockAciServices implements IContainerService {
-//     GetDeployments(): Promise<ContainerGroupListResult> {
-//         throw new Error("method not implemented");
-//     };
+// helper to reset state
+const resetState = async () => {
+    // list all free and remove
+    let freeMembers = await sut.GetFreeMemberIDs();
+    freeMembers.forEach(async f => {
+        await sut.RemoveMember(f);
+    });
 
-//     GetDeployment(containerGroupName: string): Promise<ContainerGroup>{
-//         throw new Error("method not implemented");
-//     }
+    // list all in-use and remove
+    let inUseMembers = await sut.GetInUseMemberIDs();
+    inUseMembers.forEach(async f => {
+        await sut.RemoveMember(f);
+    });
+};
 
-//     CreateNewDeployment(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>{
-//         throw new Error("method not implemented");
-//     }
+describe("poolStateStore", () => {
+    it("Should read ACI instances tagged as 'Free'", async () => {
+        // Add some members
+        await sut.UpdateMember("member1", false);
+        await sut.UpdateMember("member2", false);
+        await sut.UpdateMember("member3", false);
+        await sut.UpdateMember("member4", false);
+        await sut.UpdateMember("member5", false);
+        
+        let members = await sut.GetFreeMemberIDs();
+        Assert.equal(members.length, 5);
 
-//     CreateNewDeploymentSync(numCpu: number, memoryInGB: number, tag: string | undefined): Promise<ContainerGroup>{
-//         throw new Error("method not implemented");
-//     }
+        await resetState();
+    });
 
-//     StopDeployment(containerGroupName: string): Promise<void>{
-//         throw new Error("method not implemented");
-//     }
+    it("Should read ACI instances tagged as 'InUse'", async () => {
+        // Add some members
+        await sut.UpdateMember("member1", true);
+        await sut.UpdateMember("member2", false);
+        await sut.UpdateMember("member3", true);
+        await sut.UpdateMember("member4", false);
+        await sut.UpdateMember("member5", true);
+        
+        let members = await sut.GetInUseMemberIDs();
+        Assert.equal(members.length, 3);
 
-//     DeleteDeployment(containerGroupName: string): Promise<void>{
-//         throw new Error("method not implemented");
-//     }
+        await resetState();
+    });
 
-//     GetFullConatinerDetails(): Promise<ContainerGroup[]>{
-//         throw new Error("method not implemented");
-//     }    
+    it("Can remove member from state store", async () => {
+        // Add some members
+        await sut.UpdateMember("member1", true);
+        await sut.UpdateMember("member2", false);
+        await sut.UpdateMember("member3", true);
+        await sut.UpdateMember("member4", false);
+        await sut.UpdateMember("member5", true);
 
-//     UpdateDeploymentTag(deploymentResourceId: string, tagName: string, tagValue: string): Promise<void>{
-//         return new Promise<void>((resolve) => {
-//             LastUpdateDeploymentTagValue = tagValue;
-//             resolve();
-//         });
-//     }
+        // Now remove a few
+        await sut.RemoveMember("member2");
+        await sut.RemoveMember("member4");
+        
+        let freeMembers = await sut.GetFreeMemberIDs();
+        Assert.equal(freeMembers.length, 0);
 
-//     GetDeploymentsByTag(tagName: string, tagValue: string): Promise<Array<string>>{
-//         return new Promise<Array<string>>((resolve) => {
-//             let fakeResults: Array<string> = [];
-//             if (tagValue === "Free"){
-//                 fakeResults.push("aci-1-Free");
-//                 fakeResults.push("aci-2-Free");
-//                 fakeResults.push("aci-3-Free");
-//                 fakeResults.push("aci-4-Free");
-//                 fakeResults.push("aci-5-Free");
-//             } else if (tagValue === "InUse"){
-//                 fakeResults.push("aci-1-InUse");
-//                 fakeResults.push("aci-2-InUse");
-//                 fakeResults.push("aci-3-InUse");
-//             }
-//             resolve(fakeResults);
-//         });
-//     }
-// }
+        let inUseMembers = await sut.GetInUseMemberIDs();
+        Assert.equal(inUseMembers.length, 3);
 
-// const sut: IPoolStateStore = new PoolStateStore(new MockAciServices());
-
-// describe("poolStateStore", () => {
-//     describe("GetFreeMemberIDs", () => {
-//         it("Should read ACI instances tagged as 'Free'", async () => {
-//             let members = await sut.GetFreeMemberIDs();
-//             Assert.equal(members.length, 5);
-//         });
-//     });
-
-//     describe("GetInUseMemberIDs", () => {
-//         it("Should read ACI instances tagged as 'InUse'", async () => {
-//             let members = await sut.GetInUseMemberIDs();
-//             Assert.equal(members.length, 3);
-//         })
-//     });
-
-//     describe("UpdateMember", () => {
-//         it("Should update the specified pool member with the appropriate tag value when not in use", async () => {
-//             let aMemberId: string = "/some/member-id";
-//             await sut.UpdateMember(aMemberId, false);
-//             Assert.equal(LastUpdateDeploymentTagValue, "Free");
-//         });
-
-//         it("Should update the specified pool member with the appropriate tag value when in use", async () => {
-//             let aMemberId: string = "/some/member-id";
-//             await sut.UpdateMember(aMemberId, true);
-//             Assert.equal(LastUpdateDeploymentTagValue, "InUse");
-//         });
-//     })
-// });
+        await resetState();
+    });
+});
