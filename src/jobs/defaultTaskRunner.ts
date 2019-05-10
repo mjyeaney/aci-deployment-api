@@ -37,7 +37,11 @@ export class DefaultTaskRunner implements ITaskRunner {
                 let hoistedInterval = intervalMs;
 
                 setTimeout(async () => {
-                    await hoistedTask.Run();
+                    try {
+                        await hoistedTask.Run();
+                    } catch (err) {
+                        this.logger.Write(`ERROR during scheduled job execution: ${JSON.stringify(err)}`);
+                    }
                     hoistedCallback();
                 }, hoistedInterval);
             };

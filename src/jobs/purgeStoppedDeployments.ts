@@ -36,13 +36,16 @@ export class PurgeStoppedDeployments implements ITask {
         // Find any that are stopped / terminated
         for (let c of containerGroups){
 
-            let currentState = c.containers[0]!.instanceView!.currentState!;
+            // Not all containers may have complete state - remember this is running concurrently
+            if (c.containers.length > 0){
+                let currentState = c.containers[0]!.instanceView!.currentState!;
 
-            if ((currentState.state!.toLowerCase() === ContainerGroupStatus.Stopped) ||
-                (currentState.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
+                if ((currentState.state!.toLowerCase() === ContainerGroupStatus.Stopped) ||
+                    (currentState.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
 
-                this.logger.Write(`Found instance candidate for removal: ${c.name}`);
-                itemsToRemove.push(c);
+                    this.logger.Write(`Found instance candidate for removal: ${c.name}`);
+                    itemsToRemove.push(c);
+                }
             }
         }
 
