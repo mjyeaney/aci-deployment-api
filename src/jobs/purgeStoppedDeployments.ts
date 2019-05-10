@@ -37,14 +37,18 @@ export class PurgeStoppedDeployments implements ITask {
         for (let c of containerGroups){
 
             // Not all containers may have complete state - remember this is running concurrently
-            if (c.containers.length > 0){
-                let currentState = c.containers[0]!.instanceView!.currentState!;
+            if (c.containers.length > 0) {
+                // One more level of checking 
+                if ((c.containers[0]!.instanceView) && (c.containers[0]!.instanceView!.currentState)){
+                    // Now can safely read these properties
+                    let currentState = c.containers[0]!.instanceView!.currentState!;
 
-                if ((currentState.state!.toLowerCase() === ContainerGroupStatus.Stopped) ||
-                    (currentState.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
+                    if ((currentState.state!.toLowerCase() === ContainerGroupStatus.Stopped) ||
+                        (currentState.state!.toLowerCase() === ContainerGroupStatus.Terminated)) {
 
-                    this.logger.Write(`Found instance candidate for removal: ${c.name}`);
-                    itemsToRemove.push(c);
+                        this.logger.Write(`Found instance candidate for removal: ${c.name}`);
+                        itemsToRemove.push(c);
+                    }
                 }
             }
         }
